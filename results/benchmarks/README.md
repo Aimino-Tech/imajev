@@ -92,7 +92,7 @@ Rank 11 of 15 published models. By category: finance 95.9, support 95.5, data 95
 agents 83.8, product 80.0, documents 75.9, design 20.0 (icon rows, no image sent). Text 830/949, text+image 62/62, image-only 36/60.
 Overlap with our stage-1 training sources (Civil Comments, ESCI, ABO = 90 rows): 1 Civil Comments row verbatim in our train partition,
 3 ESCI product listings present but paired with different queries (different decisions), 0 ABO. Files: `atlan-decision-bench/`
-(`published/` = their `publish` output validated by their `validate`; `run/`; `models.json.diff`; `extra-metrics.json`). Not submitted upstream.
+(`published/` = their `publish` output validated by their `validate`; `run/`; `models.json.diff`; `extra-metrics.json`). Submitted upstream 2026-09-27 as atlanai/decision-bench#13 (fork branch results/imajev-4b).
 
 ## Reading notes for the launch report
 - Frozen 35B-A3B with reasoning at 97.3 hard shows the hard split is largely a reasoning problem; single-pass small models (ours) are a different interface with milliseconds of latency — state both.
