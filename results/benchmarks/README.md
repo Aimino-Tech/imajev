@@ -62,6 +62,18 @@ Not comparable to their board (test split: GLiNER2.5-Decide 60.2, JevK5 57.6, Se
 | imajev-4b phase 3, first attempt at 32k tokens (superseded) | pod oac3r4s99mcfsc 8×H100, 24 torch servers (3/GPU) behind nginx least-conn, harness concurrency 24, `--max-candidates 255`, `--max-input-tokens 32768`, `calibration-rot4.json` (T 1.305); adapter sha256 88c2c443… | **78.64** | 79.48 | 98.95% (0 unsupported; **251 errors** = 255-candidate canonical_entity rows over the 32k-token limit, count as misses) | **0.070** | 2026-09-26 | `decisionbench-run/p3/{db/full-summary.json,summary-p3.json,result-record/}` (staged with `decision-bench stage-result`, revision placeholder) |
 Phase-3 FINAL vs 1.0 on the board's own record: **primary 77.55 → 79.69** (supported 79.33 → 79.69, coverage 97.75% → 100%), reasoning family 68.0 → **80.6** (finqa 68 → 92, musique multihop 83 → 97), ordinal_scoring 40.3 → 46.2; but **ECE 0.024 → 0.070** (NLL 0.663 → 0.699; candidate_selection ECE 0.012 → 0.071, ordinal 0.32 → 0.38): the phase-3 temperature (1.305 NLL-fit on the authored dev) softens less than 1.0's 1.717 and the rank-64 model is more confident. 1.0 had the lowest ECE on the board; phase 3 would not. At 64k every row scores (the 537 255-candidate rows: 95.7). Rank if submitted today: **3rd of 56** (Bosun v3.1 1.7B 84.9, 0.6B 81.2 above; Winnow-12B 76.7 next). Submitted 2026-09-26 in Hanno-Labs/decision-bench-results PR #68 (both revisions, with `artifact.uri` row-level artifacts on `mohit67890/imajev-decisionbench-runs`). Rank on 2026-09-25: 3rd of 55 (after Bosun v3.1 1.7B 84.9 / 0.6B 81.2; above Winnow-12B 76.7, Jev 1.13 72.0); lowest ECE of all records. Upstream-dataset overlap disclosed in `decisionbench/contamination-check.md` (banking77 → RouteFinancial scored 87.1%, below RouteGeneralAssistant 96.7%).
 
+## LocalLLaMA/typed-decisions test (400 cases × 5 questions = 2,000 decisions; gold = teacher agreement)
+Same records Intern-Decision bundles as `typed_decisions/test.jsonl` (content-identical, different ids). Ours: `scripts/evaluate_text_decisions.py`
+worker (`--engine v1 --bundle artifacts/model-qwen4b.json --adapter <hf>/mlx --rotations 4`), Mac MLX, calibration applied post hoc (T 1.305, argmax unchanged).
+
+| Model | Protocol | Accuracy | Brier (cal) | ECE 10-bin (cal) | Abstained | Date | Files |
+|---|---|---|---|---|---|---|---|
+| **imajev-4b phase 3 (`c9e5f132`)** | MLX rot4, as shipped | **69.15** (choice 67.8 / noul 77.0 / score 64.2; workflows 62.8 / 71.0 / 72.0 / 70.8) | 0.423 (raw 0.427) | 0.025 (raw 0.058) | 1.1% (23, counted wrong) | 2026-09-27 | `typed-decisions/imajev-4b-p3/{raw-rot4.json,summary.json}` |
+| Intern-Decision-4B / 2B / 0.8B (their table, their runs) | HF single pass, T fitted | 80.55 / 79.35 / 77.35 | – | – | no abstain output | 2026-09-26 | github.com/internlm/Intern-Decision README |
+| Jev 1.13 / JevK5 / SemIf / Kev / Laya (Intern-Decision's runs) | | 73.35 / 64.50 / 62.80 / 65.60 / 35.95 | | | | | same |
+Earlier imajev-4b (pre-phase-3) 67.0 on the same split. Gap to Intern-Decision-4B: 11.4 points; to Jev 4.2. Score (ordinal) questions are the
+weakest type, consistent with DecisionBench ordinal_scoring 46.2. Their 0.8B beats our 4B here, so this suite is a training-data question, not a size question.
+
 ## Reading notes for the launch report
 - Frozen 35B-A3B with reasoning at 97.3 hard shows the hard split is largely a reasoning problem; single-pass small models (ours) are a different interface with milliseconds of latency — state both.
 - mojev and cua-s1 are the two open "same-interface" small models found so far; neither has abstention or image grounding.

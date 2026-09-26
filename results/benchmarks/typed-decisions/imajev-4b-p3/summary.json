@@ -1,0 +1,176 @@
+{
+ "source": "reports/benchmarks/typed-decisions/imajev-4b-p3/raw-rot4.json",
+ "configuration": {
+  "engine": "v1",
+  "label": "imajev-4b phase 3",
+  "adapter": "../imajev-release/hf/imajev-4b/mlx",
+  "bundle": "artifacts/model-qwen4b.json",
+  "rotations": 4
+ },
+ "n_cases": 400,
+ "failures": 0,
+ "median_ms_per_case": 2234.181437001098,
+ "temperature": 1.3051569717552742,
+ "raw": {
+  "n": 2000,
+  "accuracy": 0.6915,
+  "brier": 0.42671933510669674,
+  "ece15": 0.05438679450484269,
+  "ece10": 0.05814020968532832,
+  "mean_confidence": 0.7363040419763526,
+  "abstained": 0.011
+ },
+ "calibrated": {
+  "n": 2000,
+  "accuracy": 0.6915,
+  "brier": 0.4232178374585689,
+  "ece15": 0.024561004290266752,
+  "ece10": 0.024967327855370088,
+  "mean_confidence": 0.671906357557846,
+  "abstained": 0.011
+ },
+ "by_type": {
+  "choice": {
+   "raw": {
+    "n": 600,
+    "accuracy": 0.6783333333333333,
+    "brier": 0.4466781002405732,
+    "ece15": 0.07280463645922534,
+    "ece10": 0.08052822397634805,
+    "mean_confidence": 0.7491555173877668,
+    "abstained": 0.025
+   },
+   "calibrated": {
+    "n": 600,
+    "accuracy": 0.6783333333333333,
+    "brier": 0.4402189961488606,
+    "ece15": 0.03704322449303673,
+    "ece10": 0.029111278165481584,
+    "mean_confidence": 0.674531924413612,
+    "abstained": 0.025
+   }
+  },
+  "noul": {
+   "raw": {
+    "n": 600,
+    "accuracy": 0.77,
+    "brier": 0.3251086617975336,
+    "ece15": 0.03921111140175665,
+    "ece10": 0.027209465297611923,
+    "mean_confidence": 0.7887437937091634,
+    "abstained": 0.0033333333333333335
+   },
+   "calibrated": {
+    "n": 600,
+    "accuracy": 0.77,
+    "brier": 0.3261682314232232,
+    "ece15": 0.03582975194955379,
+    "ece10": 0.03342614373103198,
+    "mean_confidence": 0.7377590728108291,
+    "abstained": 0.0033333333333333335
+   }
+  },
+  "score": {
+   "raw": {
+    "n": 800,
+    "accuracy": 0.6425,
+    "brier": 0.48795826623816185,
+    "ece15": 0.06225361805174437,
+    "ece10": 0.06454725725785065,
+    "mean_confidence": 0.6873356216181837,
+    "abstained": 0.00625
+   },
+   "calibrated": {
+    "n": 800,
+    "accuracy": 0.6425,
+    "brier": 0.48325417296735934,
+    "ece15": 0.034699986835779274,
+    "ece10": 0.031061927456623627,
+    "mean_confidence": 0.6205476459762844,
+    "abstained": 0.00625
+   }
+  }
+ },
+ "by_workflow": {
+  "agent_trace_observability": {
+   "raw": {
+    "n": 500,
+    "accuracy": 0.628,
+    "brier": 0.4975445839316974,
+    "ece15": 0.08592838245985086,
+    "ece10": 0.08538281901888055,
+    "mean_confidence": 0.7082423607269848,
+    "abstained": 0.0
+   },
+   "calibrated": {
+    "n": 500,
+    "accuracy": 0.628,
+    "brier": 0.4878228117631687,
+    "ece15": 0.045339248168802936,
+    "ece10": 0.031969371049365515,
+    "mean_confidence": 0.6365309757275108,
+    "abstained": 0.0
+   }
+  },
+  "customer_service": {
+   "raw": {
+    "n": 500,
+    "accuracy": 0.71,
+    "brier": 0.3894169515549058,
+    "ece15": 0.0698768232468125,
+    "ece10": 0.05184049026411637,
+    "mean_confidence": 0.7159055681381044,
+    "abstained": 0.03
+   },
+   "calibrated": {
+    "n": 500,
+    "accuracy": 0.71,
+    "brier": 0.3926423755318583,
+    "ece15": 0.06137882960184482,
+    "ece10": 0.05633474275952446,
+    "mean_confidence": 0.6560434879160765,
+    "abstained": 0.03
+   }
+  },
+  "invoice_processing": {
+   "raw": {
+    "n": 500,
+    "accuracy": 0.72,
+    "brier": 0.4247062388339882,
+    "ece15": 0.08321658726463069,
+    "ece10": 0.0795096721255921,
+    "mean_confidence": 0.7842264131341069,
+    "abstained": 0.014
+   },
+   "calibrated": {
+    "n": 500,
+    "accuracy": 0.72,
+    "brier": 0.4154719676033537,
+    "ece15": 0.05192383966170136,
+    "ece10": 0.05454025646705987,
+    "mean_confidence": 0.723621873301046,
+    "abstained": 0.014
+   }
+  },
+  "security_incidents": {
+   "raw": {
+    "n": 500,
+    "accuracy": 0.708,
+    "brier": 0.3952095661061956,
+    "ece15": 0.04473998455375511,
+    "ece10": 0.028841825906214022,
+    "mean_confidence": 0.736841825906214,
+    "abstained": 0.0
+   },
+   "calibrated": {
+    "n": 500,
+    "accuracy": 0.708,
+    "brier": 0.3969341949358948,
+    "ece15": 0.05252856887688509,
+    "ece10": 0.04809998210815859,
+    "mean_confidence": 0.671429093286751,
+    "abstained": 0.0
+   }
+  }
+ }
+}
