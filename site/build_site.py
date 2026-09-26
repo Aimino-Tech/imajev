@@ -154,7 +154,7 @@ def style_ax(ax, t, xgrid=True):
 
 def chart_imajevbench(t, name):
     rows = [  # (label, correct, low, high, ours, group)
-        ("imajev-4b", 230, .77, .89, True, "A"), ("imajev-9b", 229, .76, .88, True, "A"),
+        ("imajev-4b", 234, .79, .89, True, "A"), ("imajev-9b", 229, .76, .88, True, "A"),
         ("Qwen3.5-9B base", 214, .70, .82, False, "A"), ("imajev-2b", 200, .65, .78, True, "A"),
         ("Qwen3.5-4B base", 197, .64, .78, False, "A"), ("Gemma 4 E4B-it", 176, .55, .72, False, "A"),
         ("Qwen3.5-2B base", 168, .53, .67, False, "A"), ("SmolVLM2-2.2B", 80, .22, .36, False, "A"),
@@ -190,7 +190,7 @@ def chart_jevbench(t, name):
             ("cua-s1-4b (GUI-action LoRA)", 52.3, False), ("Qwen3.5-4B base, generation", 48.6, False), ("mojev 0.85B", 33.3, False)]
     fig = base_fig(t, 8.8, 5.0, "JevBench public hard split (111 items, text-only)",
                    "Same protocol for every system: jevbench harness, typesafe adapter, one H100, serial. Competitive, not #1.",
-                   "Our runs, 24 Sept 2026; imajev as served (4 rotations, calibration file); not the official board (sealed items, 4-axis score). Source: results/benchmarks/")
+                   "Our runs, 24 to 26 Sept 2026; imajev as served (4 rotations, calibration file); not the official board (sealed items, 4-axis score). Source: results/benchmarks/")
     ax = fig.add_axes([0.30, 0.13, 0.63, 0.70])
     for i, (lab, v, ours) in enumerate(rows):
         col = t["accent"] if ours else t["other"]
@@ -205,8 +205,8 @@ def chart_jevbench(t, name):
 
 
 def chart_calibration(t, name):
-    raw = load("reports/decision-p2c/pod/4b-delta/jevbench-soup50-raw/hard/summary.json")["ece"]
-    cal = load("reports/decision-p2c/pod/4b-delta/jevbench-soup50-rot4cal/hard/summary.json")["ece"]
+    raw = load("reports/phase3/train-results/p3/run/eval/r2-s000291/jevbench/single-raw/hard/summary.json")["ece"]
+    cal = load("reports/phase3/train-results/p3/run/eval/r2-s000291/jevbench/rot4-cal/hard/summary.json")["ece"]
     fig = base_fig(t, 8.8, 5.4, "Calibration: imajev-4b on JevBench hard",
                    f"Stated confidence vs accuracy, 5 equal-count bins (~22 items each). Temperature scaling changes no answer.",
                    "Served by the released server (torch, 1×H100); calibrated = shipped file + 4 rotations, as served. ECE: the benchmark's 10-bin definition. Source: results/ in the repository")
@@ -220,8 +220,8 @@ def chart_calibration(t, name):
             chunk = rows[i * len(rows) // k:(i + 1) * len(rows) // k]
             out.append((sum(c for c, _ in chunk) / len(chunk), sum(ok for _, ok in chunk) / len(chunk), len(chunk)))
         return out
-    series_pts = {"raw": equal_count_bins("reports/decision-p2c/pod/4b-delta/jevbench-soup50-raw/hard/results.jsonl"),
-                  "calibrated": equal_count_bins("reports/decision-p2c/pod/4b-delta/jevbench-soup50-rot4cal/hard/results.jsonl")}
+    series_pts = {"raw": equal_count_bins("reports/phase3/train-results/p3/run/eval/r2-s000291/jevbench/single-raw/hard/results.jsonl"),
+                  "calibrated": equal_count_bins("reports/phase3/train-results/p3/run/eval/r2-s000291/jevbench/rot4-cal/hard/results.jsonl")}
     for series, col, lab in ((raw, t["other"], "raw"), (cal, t["accent"], "calibrated")):
         xs, ys, ns = zip(*series_pts[lab])
         ax.plot(xs, ys, color=col, linewidth=2, zorder=2)
@@ -238,7 +238,7 @@ def chart_calibration(t, name):
     ax.set_xlabel("stated confidence", fontproperties=fp(SANS, 9.5), color=t["ink2"])
     ax.set_ylabel("observed accuracy", fontproperties=fp(SANS, 9.5), color=t["ink2"])
     # side table: served hard ECE per size
-    rows = [("imajev-2b", .176, .123), ("imajev-4b", .164, .116), ("imajev-9b", .187, .092)]
+    rows = [("imajev-2b", .176, .123), ("imajev-4b", .113, .082), ("imajev-9b", .187, .092)]
     x0 = 0.71
     fig.text(x0, 0.78, "hard ECE, served", fontproperties=fp(MONO, 8.4), color=t["muted"])
     fig.text(x0, 0.72, "size", fontproperties=fp(SANS_M, 9.5), color=t["ink2"]); fig.text(x0 + 0.12, 0.72, "raw", fontproperties=fp(SANS_M, 9.5), color=t["ink2"])

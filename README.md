@@ -175,13 +175,13 @@ The decisions it handles well are the high-volume, well-defined ones with a clea
 You choose how sure the model must be before it acts. A higher bar automates less and makes fewer mistakes; everything below it goes
 to a person, including when it says it can't tell.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/automation-dark.png"><img alt="At a 90% threshold imajev-4b decides 58% of ImajevBench questions automatically, 91.5% of them correctly, and sends 37% to a person" src="docs/assets/readme/automation-light.png"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/automation-dark.png"><img alt="At a 90% threshold imajev-4b decides 58% of ImajevBench questions automatically, 97.5% of them correctly, and sends 42% to a person" src="docs/assets/readme/automation-light.png"></picture>
 
 | Act when at least… | imajev-2b | imajev-4b | imajev-9b |
 |---|---|---|---|
-| 80% sure | 49% automated, 92.7% right | 64% automated, 91.6% right | 77% automated, 87.9% right |
-| 90% sure | 38% automated, 95.3% right | 58% automated, 94.5% right | 70% automated, 91.8% right |
-| 99% sure | 21% automated, 100% right | 42% automated, 99.1% right | 52% automated, 99.3% right |
+| 80% sure | 49% automated, 92.7% right | 63% automated, 94.9% right | 77% automated, 87.9% right |
+| 90% sure | 38% automated, 95.3% right | 58% automated, 97.5% right | 70% automated, 91.8% right |
+| 99% sure | 21% automated, 100% right | 40% automated, 100% right | 52% automated, 99.3% right |
 
 <sub>The 279 ImajevBench test questions (photos, records and text; 21 whose honest answer is *can't tell*), raw probabilities,
 scored with the benchmark's own rule (as shipped: four option orders, calibration file). The benchmark is built to be hard, so treat these as a starting point and measure on a few
@@ -298,14 +298,14 @@ JevBench is a **text-only** benchmark; these are its public splits (111 hard / 7
 and the typesafe adapter on one H100, as shipped (four option orders averaged, calibration file applied) unless stated; the pod was busy with other runs, so latencies are under load. **No official JevBench leaderboard number exists for imajev
 yet**; a measurement will be requested at launch, and nothing below is one.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/imajevbench-dark.svg"><img alt="ImajevBench v2.0-lite accuracy with 95% intervals: imajev-9b 82.8%, imajev-4b 82.4%, Jev-Omni 78.5%, Qwen3.5-9B base 76.7%, Qwen3.5-4B base 70.6%, imajev-2b 70.3%, Gemma 4 E4B 63.1%, Qwen3.5-2B base 60.2%, SmolVLM2 28.7%" src="docs/assets/charts/imajevbench-light.svg"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/imajevbench-dark.svg"><img alt="ImajevBench v2.0-lite accuracy with 95% intervals: imajev-4b 83.9%, imajev-9b 82.1%, Jev-Omni 78.5%, Qwen3.5-9B base 76.7%, imajev-2b 71.7%, Qwen3.5-4B base 70.6%, Gemma 4 E4B 63.1%, Qwen3.5-2B base 60.2%, SmolVLM2 28.7%" src="docs/assets/charts/imajevbench-light.svg"></picture>
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/jevbench-dark.svg"><img alt="JevBench public hard split: JevK5 73.9, imajev-9b 69.4 with rotations and 68.5 raw, imajev-4b 67.6, Hopper 67.6, imajev-2b 56.8, cua-s1 52.3, Qwen3.5-4B base 48.6, mojev 33.3" src="docs/assets/charts/jevbench-light.svg"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/jevbench-dark.svg"><img alt="JevBench public hard split: JevK5 73.9, Eikos-4B 73.9, imajev-4b 72.1, imajev-9b 69.4, Hopper 67.6, imajev-2b 60.4, cua-s1 52.3, Qwen3.5-4B base 48.6, mojev 33.3" src="docs/assets/charts/jevbench-light.svg"></picture>
 
 | Panel | imajev-2b | imajev-4b | imajev-9b | Same-protocol references |
 |---|---:|---:|---:|---|
 | ImajevBench v2.0-lite test (279), 95% cluster CI | 71.7% [0.65, 0.78] | 83.9% [0.79, 0.89] | 82.1% [0.76, 0.88] | untuned bases 60.2 / 70.6 / 76.7%; Jev-Omni 78.5% (its own API); other small VLMs in `bench/LEADERBOARD.md` |
-| · correct Unknown (21) / false abstention (258) | 5 / 4 | 14 / 3 | 15 / 2 | |
+| · correct Unknown (21) / false abstention (258) | 5 / 4 | 18 / 9 | 15 / 2 | |
 | · hidden split (202 items, aggregates only) | 74.3% | 85.6% | 84.7% | |
 | JevBench hard (111) | 60.4% | 72.1% | 69.4% | JevK5 v0.2.0 73.9%, Eikos-4B 73.9%, Hopper 67.6%, Qwen3.5-4B base (structured generation) 48.6%, mojev 0.85B 33.3% |
 | DecisionBench 1.0 full suite (23,900 rows, the benchmark's own harness, 4 rotations + calibration) | | 79.7% (every row scored; previous version 77.5%, 3rd of 55 on the public board) | | Bosun v3.1 1.7B 84.9%, 0.6B 81.2%, Winnow-12B 76.7%, Jev 1.13 72.0%; record submitted, see `results/benchmarks/decisionbench/` |
@@ -334,7 +334,7 @@ Reading:
   which Jev-Omni has no output for; on answerable items Jev-Omni is slightly ahead (219 vs 215 / 216 for the previous adapters) and better calibrated
   (ECE 0.069). Details in `bench/LEADERBOARD.md`.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/calibration-dark.svg"><img alt="Reliability of imajev-4b on JevBench hard: raw confidence is well above accuracy; with the shipped calibration it tracks the diagonal. Hard ECE 0.187→0.138 (2B), 0.215→0.112 (4B), 0.236→0.106 (9B)" src="docs/assets/charts/calibration-light.svg"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/calibration-dark.svg"><img alt="Reliability of imajev-4b on JevBench hard: raw confidence is well above accuracy; with the shipped calibration it tracks the diagonal. Hard ECE 0.176→0.123 (2B), 0.113→0.082 (4B), 0.187→0.092 (9B)" src="docs/assets/charts/calibration-light.svg"></picture>
 
 ## Architecture
 
@@ -427,7 +427,7 @@ It reports cluster-bootstrap CIs and pre-registered paired tests, and ranks dire
 separately. It is a **preview**: all images are AI-generated and there has been no human audit yet. Data and datasheet in `bench/`,
 harness in `src/imajev_bench`, leaderboard in `bench/LEADERBOARD.md`. Run your model and send the row.
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/uplift-dark.svg"><img alt="ImajevBench accuracy, untuned base vs imajev adapter: 2B 60.2→70.3, 4B 70.6→82.4, 9B 76.7→82.8" src="docs/assets/charts/uplift-light.svg"></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/uplift-dark.svg"><img alt="ImajevBench accuracy, untuned base vs imajev adapter: 2B 60.2→71.7, 4B 70.6→83.9, 9B 76.7→82.1" src="docs/assets/charts/uplift-light.svg"></picture>
 
 ## Data and licences
 
