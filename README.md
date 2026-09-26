@@ -13,6 +13,15 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
   <a href="https://huggingface.co/datasets/mohit67890/imajev-bench"><img alt="ImajevBench" src="https://img.shields.io/badge/benchmark-ImajevBench-555555?style=flat-square"></a>
 </p>
 
+<p align="center">
+  <a href="#results"><img alt="ImajevBench 83.9%" src="https://img.shields.io/badge/ImajevBench-83.9%25-2f6fdd?style=flat-square"></a>
+  <a href="#results"><img alt="JevBench hard 72.1%" src="https://img.shields.io/badge/JevBench%20hard-72.1%25-2f6fdd?style=flat-square"></a>
+  <a href="#results"><img alt="DecisionBench 79.7%" src="https://img.shields.io/badge/DecisionBench-79.7%25-2f6fdd?style=flat-square"></a>
+  <a href="#results"><img alt="fast-decisions dev 60.4%" src="https://img.shields.io/badge/fast--decisions%20dev-60.4%25-2f6fdd?style=flat-square"></a>
+  <a href="#results"><img alt="S1-Bench typed 99.1%" src="https://img.shields.io/badge/S1--Bench%20typed-99.1%25-2f6fdd?style=flat-square"></a>
+</p>
+<p align="center"><sub>imajev-4b, our runs, as shipped (4 option orders + calibration). DecisionBench 1.0 with its own harness, every row scored, 3rd of 56 on its public board; fast-decisions is the dev split; S1-Bench is our typed conversion, not an S1-Bench score. Details and the 2B / 9B in <a href="#results">Results</a>.</sub></p>
+
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><img alt="Try the live demo on Hugging Face Spaces" src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg.svg"></a></p>
 
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b></a> · <a href="https://mohit67890.github.io/imajev/"><b>Website</b></a> · <a href="#quickstart">Quickstart</a> · <a href="#checked-not-cherry-picked">Checked examples</a> · <a href="#results">Results</a> · <a href="https://mohit67890.github.io/imajev/report/">Technical report</a></p>
