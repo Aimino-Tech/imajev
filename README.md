@@ -300,6 +300,8 @@ yet**; a measurement will be requested at launch, and nothing below is one.
 | · hidden split (202 items, aggregates only) | 74.3% | 85.6% | 84.7% | |
 | JevBench hard (111) | 60.4% | 72.1% | 69.4% | JevK5 v0.2.0 73.9%, Eikos-4B 73.9%, Hopper 67.6%, Qwen3.5-4B base (structured generation) 48.6%, mojev 0.85B 33.3% |
 | DecisionBench 1.0 full suite (23,900 rows, the benchmark's own harness, 4 rotations + calibration) | | 79.7% (every row scored; previous version 77.5%, 3rd of 55 on the public board) | | Bosun v3.1 1.7B 84.9%, 0.6B 81.2%, Winnow-12B 76.7%, Jev 1.13 72.0%; record submitted, see `results/benchmarks/decisionbench/` |
+| fastino/fast-decisions dev split (1,700 texts, 17 domains, 2,900 classification heads; their board scores a held-out test split) | | 60.4% domain macro, 59.4% pooled (previous version 59.3 / 58.8) | | not comparable to their board; runner, scorer and predictions in `results/benchmarks/fast-decisions/` |
+| S1-Bench, typed conversion (212 of the 220 English items; our derivative with written distractors, not an S1-Bench score) | | 99.1%, ECE 0.019, no abstentions (previous version 98.6%) | | saturated: a check that simple questions did not regress; conversion and predictions in `results/benchmarks/s1bench-typed/` |
 | JevBench original (72) / easy (48) | 93.1 / 100 | 98.6 / 100 | 100 / 100 | JevK5 97.2 / 100, Eikos-4B 93.1 / 100, Hopper 95.8 / 100 |
 | JevBench hard ECE, raw → as shipped (rotations + `calibration.json`) | 0.176 → 0.123 | 0.113 → 0.082 | 0.187 → 0.092 | JevK5 0.073, Eikos-4B 0.054, Hopper 0.050 |
 | MMLU-1000, text-only / with an unrelated photo | 59.8 / 54.9 | 74.5 / 72.9 | 79.2 / 78.8 | previous adapters; not re-run on the shipped versions |
