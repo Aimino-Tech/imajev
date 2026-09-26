@@ -74,6 +74,26 @@ worker (`--engine v1 --bundle artifacts/model-qwen4b.json --adapter <hf>/mlx --r
 Earlier imajev-4b (pre-phase-3) 67.0 on the same split. Gap to Intern-Decision-4B: 11.4 points; to Jev 4.2. Score (ordinal) questions are the
 weakest type, consistent with DecisionBench ordinal_scoring 46.2. Their 0.8B beats our 4B here, so this suite is a training-data question, not a size question.
 
+## Atlan Decision Bench, bench-v4 (atlanai/decision-bench; 1,071 rows, 35 tasks, 36 public sources; leaderboard decisionbench.ai)
+Not the Hanno-Labs DecisionBench. One choice question per row (2–9 options). Run 2026-09-27 on the Mac through the harness's own
+Jev-compatible `laya` provider pointed at our playground server (MLX, 4 rotations, `calibration-rot4.json`, `--max-input-tokens 16384`
+after 10 τ-bench rows overflowed the 4k default and were retried), harness commit 6fed2cd, corpus sha in `published/metadata.json`.
+The System One adapter sends text only, so the 122 image rows got their text renderings and no picture (same as Jev's published run).
+
+| Model | Accuracy (Wilson 95%) | Excl. 30 icon rows no text model can answer | ECE / Brier | Median latency |
+|---|---|---|---|---|
+| Gemini 3.5 Flash (their run) | 94.2 (92.6–95.5) | | | 3,590 ms |
+| Jev 1.13 (their run) | 92.4 (90.7–93.9) | 93.8 | | 439 ms |
+| Claude Haiku 4.5 (their run) | 90.6 (88.7–92.2) | | | 2,128 ms |
+| **imajev-4b phase 3 (ours, local)** | **86.6** (84.5–88.6), 928/1,071, 0 errors | **88.6** (922/1,041) | 0.021 / 0.189 (18 high-confidence errors) | 2,255 ms (Mac MLX, 2 concurrent; not comparable) |
+| Tev1 4B Experimental (their run) | 85.4 (83.0–87.5) | | | 387 ms |
+| Qwen3-32B / Nova Micro / Laya (their runs) | 79.6 / 66.4 / 52.8 | | | |
+Rank 11 of 15 published models. By category: finance 95.9, support 95.5, data 95.2, commerce 93.3, legal 92.9, safety 86.7, engineering 84.0,
+agents 83.8, product 80.0, documents 75.9, design 20.0 (icon rows, no image sent). Text 830/949, text+image 62/62, image-only 36/60.
+Overlap with our stage-1 training sources (Civil Comments, ESCI, ABO = 90 rows): 1 Civil Comments row verbatim in our train partition,
+3 ESCI product listings present but paired with different queries (different decisions), 0 ABO. Files: `atlan-decision-bench/`
+(`published/` = their `publish` output validated by their `validate`; `run/`; `models.json.diff`; `extra-metrics.json`). Not submitted upstream.
+
 ## Reading notes for the launch report
 - Frozen 35B-A3B with reasoning at 97.3 hard shows the hard split is largely a reasoning problem; single-pass small models (ours) are a different interface with milliseconds of latency — state both.
 - mojev and cua-s1 are the two open "same-interface" small models found so far; neither has abstention or image grounding.

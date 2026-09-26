@@ -1,0 +1,12 @@
+{
+ "overall": "928/1071",
+ "eligible_excluding_DSN1_icons": "922/1041 = 88.6%",
+ "by_modality": {
+  "text": "830/949",
+  "image": "36/60",
+  "text+image": "62/62"
+ },
+ "mean_brier": null,
+ "mean_confidence": 0.858,
+ "n_brier": 0
+}
