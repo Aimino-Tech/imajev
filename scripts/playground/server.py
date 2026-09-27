@@ -35,6 +35,7 @@ from starlette.requests import Request as HttpRequest  # noqa: E402
 
 from vision_decision.images import MAX_BYTES, load_image_bytes  # noqa: E402
 from vision_decision.jev_api import MAX_OPTIONS, to_request_with_plan, to_response  # noqa: E402
+from vision_decision.thinking import ThinkingPolicy  # noqa: E402
 from vision_decision.scoring import (check_prompt_layout, check_readout_codes, combine_rotations, compile_question,  # noqa: E402
                                     cyclic_offsets, result_from_logits, rotate)
 
@@ -105,25 +106,45 @@ class TorchBackend:
     """PyTorch fallback: one full forward per question, never a batch (left padding NaNs on MPS)."""
 
     name = "torch"
+    supports_thinking = True
 
     def __init__(self, bundle=BUNDLE, adapter=None, device=None, rotations=1, max_input_tokens=4096, readout_codes=None,
-                 prompt_layout=None):
+                 prompt_layout=None, fast=False, graph_lengths=None, merge_lora=False, float32=False):
         import torch
-        from torch_decision import TorchDecision
+        from torch_decision import GRAPH_LENGTHS, TorchDecision
         self.torch = torch
         self.rotations = max(1, int(rotations))
+        self.fast = bool(fast)
         if device is None:  # CUDA on a pod or Space, Metal on a Mac, CPU otherwise
             device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
         self.bundle = json.loads(Path(bundle).read_text())
         if not Path(self.bundle["path"]).is_dir():
             raise ValueError("Local model snapshot is missing; run scripts/download_model.py")
         start = perf_counter()
-        self.engine = TorchDecision(self.bundle["path"], device, dtype=torch.bfloat16 if device == "cuda" else torch.float32,
+        dtype = torch.bfloat16 if device == "cuda" and not float32 else torch.float32
+        # --merge-lora loads in float32 so the merge is formed at full precision, then rounds once to the serving dtype.
+        # In bf16 that rounding still moves near-tie decisions (and calibration), so it is opt-in; --fast alone keeps
+        # the LoRA unmerged and computes exactly the benchmarked function.
+        merge = bool(merge_lora) and adapter is not None
+        # The float32 merge runs on the CPU (no float32 copy on the GPU); the rounded weights then move to the device.
+        self.engine = TorchDecision(self.bundle["path"], "cpu" if merge else device, dtype=torch.float32 if merge else dtype,
                                    max_length=int(max_input_tokens))
         if adapter is not None:
-            from peft import PeftModel
-            self.engine.model = PeftModel.from_pretrained(self.engine.model, str(adapter)).eval()
+            if merge:
+                self.engine.merge_adapter(adapter, dtype)
+                self.engine.model.to(device); self.engine.device = device
+            else:
+                from peft import PeftModel
+                self.engine.model = PeftModel.from_pretrained(self.engine.model, str(adapter)).eval()
             self.engine.enable_readout(adapter, trainable=False, codes=readout_codes)
+        self.graph_lengths = []
+        if self.fast and device == "cuda":
+            lengths = [n for n in (graph_lengths or GRAPH_LENGTHS) if n <= int(max_input_tokens)]
+            try:
+                self.graph_lengths = self.engine.capture_graphs(lengths).lengths
+            except Exception:  # the eager path computes the same function
+                log.exception("CUDA graph capture failed; serving the eager path")
+                self.engine.graphs = None
         if self.engine.readout is None and readout_codes is not None:  # base model / legacy adapter: LM-head rows
             self.engine.codes = check_readout_codes(readout_codes)
         trained = self.engine.prompt_layout  # the adapter's recorded layout (standard when absent)
@@ -134,11 +155,16 @@ class TorchBackend:
         self.model = MODEL_NAME if adapter else BASE_MODEL_NAME
         self.load_seconds = perf_counter() - start
 
-    def score(self, images, request):
+    def score(self, images, request, thinking=None):
         """One forward per question and per presentation order; with rotations > 1 the per-candidate log-probabilities
         are averaged over cyclic option orders exactly as the MLX path does (combine_rotations), which drops the engine's
-        vocabulary tie break; with rotations == 1 the single pass keeps it."""
-        results, seconds, tokens = [], 0.0, 0
+        vocabulary tie break; with rotations == 1 the single pass keeps it.
+
+        thinking (a ThinkingPolicy, None = off): a question whose single-pass answer the policy calls unsure gets a greedy
+        thought of at most max_tokens, and its decision is read again right after the thought (docs/think-if-unsure-plan.md)."""
+        if thinking is not None and thinking.active and self.rotations != 1:
+            raise PlaygroundError(422, "invalid_request", "thinking needs a server running --rotations 1")
+        results, seconds, tokens, thoughts = [], 0.0, 0, []
         for field in request.fields:
             header, choices, texts = compile_question(field, request.state, getattr(self, "prompt_layout", "standard"))
             labels = self.engine.labels(len(choices), len(images))
@@ -146,19 +172,50 @@ class TorchBackend:
             passes = []
             for offset in cyclic_offsets(len(choices), self.rotations):
                 prompt = header + "\n".join(f"{label}: {text}" for label, text in zip(labels, rotate(texts, offset)))
-                with self.torch.no_grad():
-                    _, inputs, token_ids = self.engine.prepare(images, prompt, labels)
-                    logits = [float(x) for x in self.engine.candidate_logits(inputs, token_ids).cpu().tolist()]
+                if getattr(self, "fast", False):
+                    with self.torch.inference_mode():
+                        _, inputs, token_ids = self.engine.prepare_fast(images, prompt, labels)
+                        logits = [float(x) for x in self.engine.candidate_logits_fast(inputs, token_ids).cpu().tolist()]
+                else:
+                    with self.torch.no_grad():
+                        _, inputs, token_ids = self.engine.prepare(images, prompt, labels)
+                        logits = [float(x) for x in self.engine.candidate_logits(inputs, token_ids).cpu().tolist()]
                 tokens = max(tokens, int(inputs["input_ids"].shape[-1]))
                 passes.append((offset, logits, token_ids))
             seconds += perf_counter() - start
             if len(passes) == 1:
-                results.append(result_from_logits(choices, passes[0][1], token_ids=passes[0][2]))
+                result = result_from_logits(choices, passes[0][1], token_ids=passes[0][2])
             else:
-                results.append(combine_rotations(choices, [(offset, logits) for offset, logits, _ in passes]))
+                result = combine_rotations(choices, [(offset, logits) for offset, logits, _ in passes])
+            if thinking is not None and thinking.should_think(result):
+                start = perf_counter()
+                thought_result, note = self._think(images, prompt, choices, labels, thinking)
+                result = thought_result or result
+                note["think_ms"] = round((perf_counter() - start) * 1000, 1)
+                thoughts.append({"question": field.id, **note})
+            results.append(result)
         # No shared prefill on this path: the whole cost is reported per question.
-        return results, {"prefill_ms": 0.0, "questions_ms": round(seconds * 1000, 1), "input_tokens": tokens,
-                         "rotations": self.rotations}
+        usage = {"prefill_ms": 0.0, "questions_ms": round(seconds * 1000, 1), "input_tokens": tokens, "rotations": self.rotations}
+        if thinking is not None and thinking.active:
+            usage["thinking"] = {"mode": thinking.mode, "max_tokens": thinking.max_tokens, "thought": thoughts}
+        return results, usage
+
+    def _think(self, images, prompt, choices, labels, thinking):
+        """-> (the Result read after a greedy thought, a usage note). `prompt` is the rotations == 1 single-pass prompt."""
+        engine = getattr(self, "thoughts", None)  # a VLLMThoughts client (--think-engine vllm), else transformers generate
+        try:
+            tokens, closed = engine.think(images, prompt, thinking.max_tokens)[:2] if engine else self.engine.generate_thought(images, prompt, thinking.max_tokens)
+        except Exception as exc:  # no thought (e.g. a prompt longer than the thought engine's context): keep the single pass
+            log.warning("thought failed, keeping the single-pass answer: %s", exc)
+            return None, {"thought_tokens": 0, "closed": False, "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
+        inputs, token_ids = self.engine.inputs_after_thought(images, prompt, labels, tokens, closed)
+        with self.torch.inference_mode():
+            scored = self.engine.candidate_logits_fast(inputs, token_ids) if getattr(self, "fast", False) else self.engine.candidate_logits(inputs, token_ids)
+            logits = [float(x) for x in scored.cpu().tolist()]
+        note = {"thought_tokens": len(tokens), "closed": closed}
+        if thinking.return_thought:
+            note["text"] = self.engine.processor.tokenizer.decode(tokens)
+        return result_from_logits(choices, logits, token_ids=token_ids), note
 
 
 def _warn_layout(trained, served):
@@ -167,7 +224,7 @@ def _warn_layout(trained, served):
 
 
 def build_backend(kind, adapter=None, no_adapter=False, bundle=BUNDLE, rotations=1, max_input_tokens=4096,
-                  readout_codes=None, prompt_layout=None):
+                  readout_codes=None, prompt_layout=None, fast=False, merge_lora=False, float32=False):
     """`auto` prefers MLX with the converted adapter and falls back to torch + the PEFT adapter.
 
     readout_codes None / prompt_layout None follow the adapter (its readout rows; its decision_readout.json layout)."""
@@ -189,7 +246,8 @@ def build_backend(kind, adapter=None, no_adapter=False, bundle=BUNDLE, rotations
                           readout_codes=readout_codes, prompt_layout=prompt_layout)
     if kind == "torch":
         return TorchBackend(bundle, chosen, rotations=rotations, max_input_tokens=max_input_tokens,
-                            readout_codes=readout_codes, prompt_layout=prompt_layout)
+                            readout_codes=readout_codes, prompt_layout=prompt_layout, fast=fast, merge_lora=merge_lora,
+                            float32=float32)
     raise ValueError(f"Unknown backend {kind!r}")
 
 
@@ -314,8 +372,11 @@ def compile_payload(payload, max_options=MAX_OPTIONS):
 
 # ------------------------------------------------------------------------------------------- app
 
-def create_app(backend, examples=None, static=STATIC, calibration=None):
-    """`backend` needs .name, .model, .adapter, .load_seconds and .score(images, request)."""
+def create_app(backend, examples=None, static=STATIC, calibration=None, thinking=None):
+    """`backend` needs .name, .model, .adapter, .load_seconds and .score(images, request); a backend with
+    .supports_thinking also takes .score(images, request, thinking=ThinkingPolicy). `thinking` = the server's default policy
+    (off unless the server was started with --thinking); a request's "thinking" object overrides it."""
+    thinking = thinking or ThinkingPolicy()
     app = FastAPI(title="imajev playground", docs_url="/docs", redoc_url=None)
     app.state.backend = backend
     app.state.examples = load_examples() if examples is None else examples
@@ -364,10 +425,16 @@ def create_app(backend, examples=None, static=STATIC, calibration=None):
         loaded = decode_images(blobs)
         request, plan = compile_payload(payload, getattr(backend, "max_options", MAX_OPTIONS))
         images = [image for image, _ in loaded]   # [] is a text-only request; the model handles it
+        try:
+            policy = thinking.with_request(payload.get("thinking"))
+        except (TypeError, ValueError) as exc:
+            raise PlaygroundError(422, "invalid_request", str(exc))
+        if policy.active and not getattr(backend, "supports_thinking", False):
+            raise PlaygroundError(422, "invalid_request", f"thinking is not available on the {backend.name} backend")
 
         def run():
             with app.state.lock:  # one GPU: strictly sequential
-                return backend.score(images, request)
+                return backend.score(images, request, thinking=policy) if policy.active else backend.score(images, request)
 
         try:
             results, usage = await run_in_threadpool(run)
@@ -416,13 +483,35 @@ def main(argv=None):
                              "LM-head-initialised code so choice questions may have 255 options")
     parser.add_argument("--prompt-layout", choices=("auto", "standard", "compact"), default="auto",
                         help="prompt layout; auto = the layout recorded in the adapter (standard when absent)")
+    parser.add_argument("--fast", action="store_true",
+                        help="torch only: tokenize once and, on CUDA, replay recorded graphs of the language model "
+                             "(captured at load, about a minute); same decisions as without it")
+    parser.add_argument("--merge-lora", action="store_true",
+                        help="torch only: fold the LoRA into the weights at load (a little faster; bf16 rounding can move "
+                             "near-tie decisions)")
+    parser.add_argument("--thinking", choices=("off", "auto", "always"), default="off",
+                        help="default thinking mode (torch only); a request's \"thinking\" object overrides it. auto thinks only "
+                             "when the single-pass answer is unsure (docs/think-if-unsure-plan.md)")
+    parser.add_argument("--think-max-tokens", type=int, default=256, help="default thought budget in tokens")
+    parser.add_argument("--think-threshold", type=float, default=0.7,
+                        help="auto: think when the top option's share of the non-unknown mass is below this")
+    parser.add_argument("--think-unknown-threshold", type=float, default=None,
+                        help="auto: also think when the unknown mass is above this (default: not used)")
+    parser.add_argument("--think-engine", choices=("hf", "vllm"), default="hf",
+                        help="who writes thoughts: transformers generate in this process (hf), or a vLLM OpenAI server running "
+                             "the same merged weights (vllm; see scripts/export_merged.py)")
+    parser.add_argument("--think-url", default="http://127.0.0.1:8000", help="--think-engine vllm: the vLLM server")
+    parser.add_argument("--think-model", default="imajev-4b", help="--think-engine vllm: its served model name")
+    parser.add_argument("--float32", action="store_true",
+                        help="torch only: serve in float32 on CUDA too (a slow reference for checking bf16 serving paths)")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     backend = build_backend(args.backend, args.adapter, args.no_adapter, Path(args.model_bundle), args.rotations,
                             args.max_input_tokens, readout_codes=args.readout_codes,
-                            prompt_layout=None if args.prompt_layout == "auto" else args.prompt_layout)
+                            prompt_layout=None if args.prompt_layout == "auto" else args.prompt_layout, fast=args.fast,
+                            merge_lora=args.merge_lora, float32=args.float32)
     if args.model_name:
         backend.model = args.model_name
     log.info("backend=%s model=%s adapter=%s load_seconds=%.1f readout_codes=%s prompt_layout=%s",
@@ -432,7 +521,16 @@ def main(argv=None):
         from vision_decision.calibration import TemperatureCalibrator
         calibration = TemperatureCalibrator.load(args.calibration)
     import uvicorn
-    uvicorn.run(create_app(backend, calibration=calibration), host=args.host, port=args.port, log_level="warning")
+    thinking = ThinkingPolicy(mode=args.thinking, max_tokens=args.think_max_tokens, threshold=args.think_threshold,
+                              unknown_threshold=args.think_unknown_threshold)
+    if thinking.active and not getattr(backend, "supports_thinking", False):
+        parser.error(f"--thinking needs the torch backend (this server runs {backend.name})")
+    if args.think_engine == "vllm":
+        if not getattr(backend, "supports_thinking", False):
+            parser.error("--think-engine vllm needs the torch backend")
+        from thought_engine import VLLMThoughts
+        backend.thoughts = VLLMThoughts(args.think_url, args.think_model, backend.engine.processor.tokenizer)
+    uvicorn.run(create_app(backend, calibration=calibration, thinking=thinking), host=args.host, port=args.port, log_level="warning")
     return 0
 
 

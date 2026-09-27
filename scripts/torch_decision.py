@@ -128,3 +128,139 @@ class TorchDecision:
    indices=self._readout_indices(ids)
    result.append(self.readout(hidden[i])[indices] if self.readout is not None and indices is not None else hidden[i]@head[torch.tensor(ids,device=self.device)].float().T)
   return result,rationale_lm_loss(states,head,labels,position+1)
+
+ # ---- serving fast path (server --fast): same decision function, less work per request ----
+ def merge_adapter(self,adapter,dtype=torch.bfloat16):
+  """Fold a PEFT LoRA into the weights so every forward is a plain base-model forward. Call on a float32 model: the
+  low-rank sum is formed in float32 and rounded once to `dtype`. The decision readout is separate and stays float32."""
+  from peft import PeftModel
+  self.model=PeftModel.from_pretrained(self.model,str(adapter)).merge_and_unload().to(dtype).eval()
+ DECISION_TAIL='</think>\n\n'
+ def label_ids(self,rendered,labels):
+  """= verified_label_ids(tokenizer, rendered, labels), with one tokenization per label for the life of the process.
+  The rendered prompt ends with the special token '</think>' then '\\n\\n'; the tokenizer splits at special tokens, so
+  whether a label is one token at the decision position depends only on that tail (test_torch_fast_path checks this)."""
+  if not rendered.endswith(self.DECISION_TAIL):return verified_label_ids(self.processor.tokenizer,rendered,labels)
+  cache=self.__dict__.setdefault('_label_cache',{})
+  for label in labels:
+   if label not in cache:cache[label]=verified_label_ids(self.processor.tokenizer,self.DECISION_TAIL,[label])[0]
+  ids=[cache[label] for label in labels]
+  if len(set(ids))!=len(ids):raise ValueError('Choice labels do not have distinct token IDs')
+  return ids
+ def prepare_fast(self,images,prompt,labels):
+  """prepare() with one tokenization: text-only requests skip the multimodal processor (same ids, checked by the test)."""
+  images=[] if images is None else images if isinstance(images,list) else [images];rendered=self.render(prompt,len(images))
+  token_ids=self.label_ids(rendered,labels)
+  # Images: the processor resizes and patchifies as always but leaves the pixels as uint8; normalize_patches finishes the
+  # identical float32 arithmetic on the GPU (8x fewer bytes to copy, no float work on the CPU).
+  inputs=dict(self.processor(text=[rendered],images=images,return_tensors='pt',do_rescale=False,do_normalize=False)) if images else {'input_ids':self.processor.tokenizer(rendered,add_special_tokens=False,return_tensors='pt')['input_ids']}
+  if inputs['input_ids'].shape[-1]>self.max_length:raise ValueError(f'Processed request exceeds the {self.max_length}-token limit')
+  suffix=self.__dict__.get('_suffix_ids') or self.__dict__.setdefault('_suffix_ids',self.processor.tokenizer.encode(self.DECISION_TAIL,add_special_tokens=False))
+  if inputs['input_ids'][0,-len(suffix):].tolist()!=suffix:raise ValueError('Processed decision-position suffix mismatch')
+  return rendered,inputs,token_ids
+ def normalize_patches(self,patches):
+  """The image processor's rescale_and_normalize on already patchified uint8 pixels: one fused mean and std per channel,
+  then x.float() - mean, / std, exactly the torchvision normalize the processor runs before patchify. Elementwise, so
+  patchify first changes nothing; each patch row is channel-major (channel x temporal x patch x patch)."""
+  ip=self.processor.image_processor
+  mean,std,_=ip._fuse_mean_std_and_rescale_factor(do_normalize=True,image_mean=ip.image_mean,image_std=ip.image_std,do_rescale=True,rescale_factor=ip.rescale_factor,device=patches.device)
+  per=ip.temporal_patch_size*ip.patch_size*ip.patch_size
+  mean=torch.as_tensor(mean,dtype=torch.float32,device=patches.device).repeat_interleave(per);std=torch.as_tensor(std,dtype=torch.float32,device=patches.device).repeat_interleave(per)
+  return patches.to(torch.float32).sub_(mean).div_(std)
+ def _base(self):
+  """The Qwen3.5 model under a PEFT wrapper (its LoRA layers stay in place) or the merged model itself."""
+  return self.model.get_base_model() if hasattr(self.model,'get_base_model') else self.model
+ def _embeds_positions(self,inputs):
+  """The multimodal model's forward up to the language model: token embeddings with the image features scattered in, and the
+  M-RoPE position ids (3 x 1 x n). Text-only positions are 0..n-1 on every axis, as the model's own default."""
+  m=self._base().model;ids=inputs['input_ids'];embeds=m.get_input_embeddings()(ids)
+  if 'pixel_values' not in inputs:return embeds,torch.arange(ids.shape[1],device=ids.device).view(1,1,-1).expand(3,1,-1)
+  features=torch.cat(m.get_image_features(inputs['pixel_values'],inputs['image_grid_thw'],return_dict=True).pooler_output,dim=0).to(embeds.device,embeds.dtype)
+  mask,_=m.get_placeholder_mask(ids,inputs_embeds=embeds,image_features=features);embeds=embeds.masked_scatter(mask,features)
+  positions=m.compute_3d_position_ids(input_ids=ids,inputs_embeds=embeds,image_grid_thw=inputs['image_grid_thw'],attention_mask=inputs.get('attention_mask'),mm_token_type_ids=inputs.get('mm_token_type_ids'))
+  return embeds,positions
+ def candidate_logits_fast(self,inputs,token_ids):
+  """candidate_logits(), through a recorded CUDA graph when one fits the prompt length."""
+  inputs={k:v.to(self.device) for k,v in inputs.items()};base=self._base()
+  if inputs.get('pixel_values') is not None and inputs['pixel_values'].dtype==torch.uint8:inputs['pixel_values']=self.normalize_patches(inputs['pixel_values'])
+  embeds,positions=self._embeds_positions(inputs);graphs=self.__dict__.get('graphs')
+  hidden=graphs.run(embeds,positions) if graphs is not None and graphs.fits(embeds.shape[1]) else base.model.language_model(inputs_embeds=embeds,position_ids=positions,use_cache=False).last_hidden_state[0,-1]
+  indices=self._readout_indices(token_ids)
+  return self.readout(hidden.float())[indices] if self.readout is not None and indices is not None else hidden.float()@base.lm_head.weight[torch.tensor(token_ids,device=self.device)].float().T
+ def capture_graphs(self,lengths):
+  base=self._base()
+  self.graphs=DecoderGraphs(base.model.language_model,base.config.text_config.hidden_size,lengths,self.device,base.dtype)
+  return self.graphs
+
+ # ---- thinking (think-if-unsure): a greedy thought in Qwen3.5's thinking template, the decision read right after it ----
+ THINK_TAIL='<think>\n'
+ def render_thinking(self,prompt,n_images):
+  messages=[dict(role='user',content=[dict(type='image')]*n_images+[dict(type='text',text=prompt)])]
+  rendered=self.processor.apply_chat_template(messages,add_generation_prompt=True,tokenize=False,enable_thinking=True)
+  if not rendered.endswith(self.THINK_TAIL):raise ValueError('Unexpected Qwen thinking template boundary')
+  return rendered
+ def _thinking_inputs(self,images,prompt):
+  images=[] if images is None else images if isinstance(images,list) else [images]
+  inputs=dict(self.processor(text=[self.render_thinking(prompt,len(images))],images=images or None,return_tensors='pt'))
+  if inputs['input_ids'].shape[-1]>self.max_length:raise ValueError(f'Processed request exceeds the {self.max_length}-token limit')
+  return inputs
+ def think_end_id(self):
+  ids=self.processor.tokenizer.encode('</think>',add_special_tokens=False)
+  if len(ids)!=1:raise ValueError("'</think>' is not a single token")
+  return ids[0]
+ @torch.inference_mode()
+ def generate_thought(self,images,prompt,max_tokens):
+  """Greedy thought token ids (without '</think>') and whether the model closed the thought itself."""
+  tok=self.processor.tokenizer;end=self.think_end_id();pad=tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+  inputs={k:v.to(self.device) for k,v in self._thinking_inputs(images,prompt).items()}
+  out=self.model.generate(**inputs,max_new_tokens=int(max_tokens),do_sample=False,eos_token_id=[end,tok.eos_token_id],pad_token_id=pad)
+  tokens=[]
+  for token in out[0,inputs['input_ids'].shape[-1]:].tolist():
+   if token==end:return tokens,True
+   if token in (tok.eos_token_id,pad):break
+   tokens.append(token)
+  return tokens,False
+ def inputs_after_thought(self,images,prompt,labels,thought,closed):
+  """Model inputs ending '</think>\\n\\n' after `thought` (token ids; a cut thought is closed with '\\n</think>\\n\\n'),
+  and the labels' token ids at that decision position. Same image, prompt and decision position as the single pass."""
+  images=[] if images is None else images if isinstance(images,list) else [images]
+  inputs=self._thinking_inputs(images,prompt);tok=self.processor.tokenizer
+  tail=tok.encode('</think>\n\n' if closed else '\n</think>\n\n',add_special_tokens=False)
+  extra=torch.tensor([list(thought)+tail],dtype=inputs['input_ids'].dtype)
+  inputs['input_ids']=torch.cat([inputs['input_ids'],extra],dim=1)
+  if 'attention_mask' in inputs:inputs['attention_mask']=torch.cat([inputs['attention_mask'],torch.ones_like(extra)],dim=1)
+  if 'mm_token_type_ids' in inputs:inputs['mm_token_type_ids']=torch.cat([inputs['mm_token_type_ids'],torch.zeros_like(extra,dtype=inputs['mm_token_type_ids'].dtype)],dim=1)
+  if inputs['input_ids'].shape[-1]>self.max_length:raise ValueError(f'Processed request exceeds the {self.max_length}-token limit')
+  suffix=tok.encode(self.DECISION_TAIL,add_special_tokens=False)
+  if inputs['input_ids'][0,-len(suffix):].tolist()!=suffix:raise ValueError('Decision-position suffix mismatch after the thought')
+  return inputs,self.label_ids(self.DECISION_TAIL,labels)
+
+GRAPH_LENGTHS=list(range(64,1025,64))+list(range(1152,2049,128))+list(range(2304,4097,256))
+
+class DecoderGraphs:
+ """CUDA graphs of the language model at fixed padded lengths, recorded once at load (the design of JevK5's runtime,
+ Apache-2.0, also used by FlyMy's Decision 4B). A prompt is right-padded to the next recorded length: every layer is
+ causal (full attention, gated DeltaNet, its short convolution), so padding after the decision position cannot change it."""
+ def __init__(self,lm,hidden,lengths,device,dtype):
+  self.graphs={};pool=None
+  with torch.inference_mode():
+   for n in sorted(set(lengths),reverse=True):  # longest first: the shorter graphs reuse its memory pool
+    embeds=torch.zeros(1,n,hidden,device=device,dtype=dtype);positions=torch.arange(n,device=device).view(1,1,n).expand(3,1,n).contiguous()
+    last=torch.zeros(1,dtype=torch.long,device=device)
+    def step(embeds=embeds,positions=positions,last=last):
+     return lm(inputs_embeds=embeds,position_ids=positions,use_cache=False).last_hidden_state[0].index_select(0,last)[0]
+    side=torch.cuda.Stream();side.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(side):
+     for _ in range(3):step()  # warm-up: compiles the Triton kernels outside the capture
+    torch.cuda.current_stream().wait_stream(side)
+    graph=torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph,pool=pool):out=step()
+    pool=graph.pool();self.graphs[n]=(graph,embeds,positions,last,out)
+  self.lengths=sorted(self.graphs)
+ def fits(self,n):return bool(self.lengths) and n<=self.lengths[-1]
+ def run(self,embeds,positions):
+  n=embeds.shape[1];size=next(x for x in self.lengths if x>=n);graph,static_embeds,static_positions,last,out=self.graphs[size]
+  static_embeds.zero_();static_embeds[:,:n].copy_(embeds)
+  static_positions[:,:,:n].copy_(positions);static_positions[:,:,n:].copy_(positions[:,:,-1:]+torch.arange(1,size-n+1,device=positions.device))
+  last.fill_(n-1);graph.replay()
+  return out.clone()

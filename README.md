@@ -263,6 +263,13 @@ sizes, swap `4b` for `2b` or `9b` in the download commands, the bundle (`artifac
 default bundle) and the adapter paths. `--rotations 4` averages four option orders; every number in this README was measured with it and with `--calibration` (on JevBench hard it adds +1.8 / +0.9 / +0.0 points for the 2B / 4B / 9B at about 3×
 the latency). The 9B needs ~19 GB resident; do not keep it and another model loaded on the same Mac.
 
+On a CUDA GPU, `--fast` makes the torch backend quicker without changing what it computes: one tokenization per question,
+image normalisation on the GPU (pixels bit-identical to the processor's), and CUDA graphs of the language model recorded at
+load (about a minute; needs a C compiler for the Triton kernels, e.g. `build-essential`). `--merge-lora` also folds the adapter
+into the weights at load (float32 sum, rounded once to bf16). Checked against a float32 reference on JevBench public and 300
+ImajevBench images: `--fast --merge-lora` is as close to it as the default path, at 11 ms instead of 59 ms per standard text
+decision and 91 ms instead of 149 ms per image decision on one H100 ([results/serving/fast-path-2026-09-27](results/serving/fast-path-2026-09-27/README.md), `scripts/bench_fast_path.py`).
+
 ## For developers
 
 **What comes back.** For each question: `choice` / `score` return `probabilities` over your options (summing to 1, given that the
