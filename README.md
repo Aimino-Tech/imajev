@@ -13,6 +13,14 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
   <a href="https://huggingface.co/datasets/mohit67890/imajev-bench"><img alt="ImajevBench" src="https://img.shields.io/badge/benchmark-ImajevBench-555555?style=flat-square"></a>
 </p>
 
+<p align="center"><b>#1 of 91 on <a href="https://benchmarkheaven.com/jev-models">JevBench v1.4.2.2</a></b>, the official board for Jev-class decision models (scored 27 Sep 2026)<br>
+<sub>Run by the benchmark's maintainer, ahead of Jev 1.13.0 itself. Details in <a href="#official-leaderboards">Official leaderboards</a>.</sub></p>
+
+<p align="center">
+  <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=flat-square"></a>
+  <a href="https://github.com/Hanno-Labs/decision-bench-results"><img alt="DecisionBench 1.0: #3 of 60" src="https://img.shields.io/badge/DecisionBench%201.0-%233%20of%2060-111111?style=flat-square"></a>
+</p>
+
 <p align="center">
   <a href="#results"><img alt="ImajevBench 83.9%" src="https://img.shields.io/badge/ImajevBench-83.9%25-2f6fdd?style=flat-square"></a>
   <a href="#results"><img alt="JevBench hard 72.1%" src="https://img.shields.io/badge/JevBench%20hard-72.1%25-2f6fdd?style=flat-square"></a>
@@ -20,7 +28,7 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
   <a href="#results"><img alt="fast-decisions dev 60.4%" src="https://img.shields.io/badge/fast--decisions%20dev-60.4%25-2f6fdd?style=flat-square"></a>
   <a href="#results"><img alt="S1-Bench typed 99.1%" src="https://img.shields.io/badge/S1--Bench%20typed-99.1%25-2f6fdd?style=flat-square"></a>
 </p>
-<p align="center"><sub>imajev-4b, our runs, as shipped (4 option orders + calibration). DecisionBench 1.0 with its own harness, every row scored, 3rd of 56 on its public board; fast-decisions is the dev split; S1-Bench is our typed conversion, not an S1-Bench score. Details and the 2B / 9B in <a href="#results">Results</a>.</sub></p>
+<p align="center"><sub>imajev-4b, our runs, as shipped (4 option orders + calibration). DecisionBench 1.0 with its own harness, every row scored, #3 of 60 in its official registry; fast-decisions is the dev split; S1-Bench is our typed conversion, not an S1-Bench score. Details and the 2B / 9B in <a href="#results">Results</a>.</sub></p>
 
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><img alt="Try the live demo on Hugging Face Spaces" src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg.svg"></a></p>
 
@@ -148,7 +156,7 @@ photos, and runs on your own hardware.
 |---|---|---|---|---|
 | photos in a request | **up to 2 (reference + target)** | none, text only | yes; two-photo requests not documented | yes |
 | answer format | **probability per option you set** | probability per option you set | probability per option you set | generated text or JSON |
-| says it can't tell | **trained `unknown`, 14 / 21 on ImajevBench** | not documented | no abstain output, so 0 / 21 | only if prompted |
+| says it can't tell | **trained `unknown`, 18 / 21 on ImajevBench (4B)** | not documented | no abstain output, so 0 / 21 | only if prompted |
 | record per request | **32 KB (about 8k tokens)** | 32k tokens | not documented | large |
 | where it runs | **your hardware, open weights** | hosted API | your hardware, open weights (12B) | hosted API |
 | time per decision | **about 0.1 s raw, about 0.35 s as shipped (one H100)** | not documented | about 0.1 s (one H100) | 5 to 8 s |
@@ -300,10 +308,27 @@ serve it with `--calibration`. The full guide is section 5 of the [technical rep
 
 ## Results
 
-All numbers are from our runs on 2026-09-24 with the released adapters; the raw outputs and per-panel reports are in `results/`.
+### Official leaderboards
+
+Measured by each benchmark's maintainer, not by us. Boards move; every rank is quoted with its version and date.
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/jevbench-official-dark.svg"><img alt="JevBench v1.4.2.2, scored 27 Sep 2026, JevBench Score: 1 Imajev-4B 67.37, 2 Plumb-4B 65.84, 3 decider-4b v2 64.13, 4 Jev 1.13.0 63.29, 5 JevK5 v0.2.0 62.04, 6 Cygnet 61.76, 7 Hopper 59.43, 8 Winnow-12B Q8 55.58" src="docs/assets/charts/jevbench-official-light.svg"></picture>
+
+| Board | imajev result | Source |
+|---|---|---|
+| **JevBench v1.4.2.2** (Benchmark Heaven, scored 27 Sep 2026; 91 ranked systems) | **imajev-4b #1, JevBench Score 67.37** (Intelligence 52.2, Calibration 80.4, Speed 90.6, Cost 59.7). Plumb-4B 65.84, decider-4b v2 64.13, Jev 1.13.0 63.29. #1 under four of the board's five weightings (#2 under speed-heavy 20:60:20, #3 on Intelligence alone); best Calibration of the top 8. Also #1 on the board's Capability ranking of Jev-class systems (mean of Intelligence and Calibration): 66.3 vs Jev 1.13.0 64.7. Cost on the board's estimate: $0.022 per 1,000 decisions (Jev $0.040). | [board](https://benchmarkheaven.com/jev-models) · [data](https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2) |
+| **DecisionBench 1.0** (Hanno-Labs, 23,900 rows) | **imajev-4b #3 of 60 records**: 79.69% primary, every row scored, +7.67 pp vs Jev 1.13 (72.03%). The two above are the benchmark team's own Bosun v3.1 1.7B and 0.6B. | [registry](https://github.com/Hanno-Labs/decision-bench-results) (results PR #68, merged 28 Sep 2026) |
+| **Image JevBench v0.1.2** (Benchmark Heaven; 49 systems) | imajev-2b #5 (68.72), imajev-4b #11 (65.72). The 4B has the 2nd-highest sealed accuracy of 44 self-hosted systems (83.1%); its rank is held back by GPU time on the Cost axis. A re-measure with the faster server (`--fast --merge-lora`) is under way. | [board](https://benchmarkheaven.com/image-jev-bench) |
+
+Official JevBench setup: adapter `mohit67890/imajev-4b` at revision `c9e5f132`, this repository at `a0134749`, served with
+`--rotations 1 --calibration calibration.json` (one option order, the shipped calibration file).
+
+### Our runs
+
+The numbers below are from our own runs on 2026-09-24 onward with the released adapters; the raw outputs and per-panel reports are in `results/`.
 JevBench is a **text-only** benchmark; these are its public splits (111 hard / 72 original / 48 easy) run with the jevbench harness
-and the typesafe adapter on one H100, as shipped (four option orders averaged, calibration file applied) unless stated; the pod was busy with other runs, so latencies are under load. **No official JevBench leaderboard number exists for imajev
-yet**; a measurement will be requested at launch, and nothing below is one.
+and the typesafe adapter on one H100, as shipped (four option orders averaged, calibration file applied) unless stated; the pod was busy with other runs, so latencies are under load. They are not
+the official board, which adds sealed items and scores four axes (above).
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/charts/imajevbench-dark.svg"><img alt="ImajevBench v2.0-lite accuracy with 95% intervals: imajev-4b 83.9%, imajev-9b 82.1%, Jev-Omni 78.5%, Qwen3.5-9B base 76.7%, imajev-2b 71.7%, Qwen3.5-4B base 70.6%, Gemma 4 E4B 63.1%, Qwen3.5-2B base 60.2%, SmolVLM2 28.7%" src="docs/assets/charts/imajevbench-light.svg"></picture>
 
@@ -315,7 +340,7 @@ yet**; a measurement will be requested at launch, and nothing below is one.
 | · correct Unknown (21) / false abstention (258) | 5 / 4 | 18 / 9 | 15 / 2 | |
 | · hidden split (202 items, aggregates only) | 74.3% | 85.6% | 84.7% | |
 | JevBench hard (111) | 60.4% | 72.1% | 69.4% | JevK5 v0.2.0 73.9%, Eikos-4B 73.9%, Hopper 67.6%, Qwen3.5-4B base (structured generation) 48.6%, mojev 0.85B 33.3% |
-| DecisionBench 1.0 full suite (23,900 rows, the benchmark's own harness, 4 rotations + calibration) | | 79.7% (every row scored; previous version 77.5%, 3rd of 55 on the public board) | | Bosun v3.1 1.7B 84.9%, 0.6B 81.2%, Winnow-12B 76.7%, Jev 1.13 72.0%; record submitted, see `results/benchmarks/decisionbench/` |
+| DecisionBench 1.0 full suite (23,900 rows, the benchmark's own harness, 4 rotations + calibration) | | 79.7% (every row scored; #3 of 60 in the official registry; previous version 77.5%) | | Bosun v3.1 1.7B 84.9%, 0.6B 81.2%, Winnow-12B 76.7%, Jev 1.13 72.0%; official record merged (Hanno-Labs/decision-bench-results#68), see `results/benchmarks/decisionbench/` |
 | fastino/fast-decisions dev split (1,700 texts, 17 domains, 2,900 classification heads; their board scores a held-out test split) | | 60.4% domain macro, 59.4% pooled (previous version 59.3 / 58.8) | | not comparable to their board; runner, scorer and predictions in `results/benchmarks/fast-decisions/` |
 | S1-Bench, typed conversion (212 of the 220 English items; our derivative with written distractors, not an S1-Bench score) | | 99.1%, ECE 0.019, no abstentions (previous version 98.6%) | | saturated: a check that simple questions did not regress; conversion and predictions in `results/benchmarks/s1bench-typed/` |
 | LocalLLaMA/typed-decisions test (400 workflow cases × 5 questions = 2,000 decisions; gold is that dataset's teacher agreement) | | 69.2% (calibrated Brier 0.423, ECE 0.025; earlier version 67.0) | | Intern-Decision-4B 80.6%, Jev 1.13 73.4%, JevK5 64.5% (Intern-Decision's own runs); ours in `results/benchmarks/typed-decisions/` |
@@ -329,7 +354,7 @@ yet**; a measurement will be requested at launch, and nothing below is one.
 
 Reading:
 
-- **Competitive on JevBench's public splits, not #1.** JevK5 and Eikos-4B are ahead of every imajev size on hard, by 2 to 4 items of 111; the 4B is above Hopper (72.1 vs 67.6). The gap to
+- **#1 on the official JevBench Score, not on every split.** On the public hard split alone, JevK5 and Eikos-4B are ahead of every imajev size, by 2 to 4 items of 111; the 4B is above Hopper (72.1 vs 67.6). The gap to
   JevK5 is concentrated in judge-style items (previous 4B adapter: 10/17 vs JevK5 13/17 on judge_hard). A frozen Qwen3.6-35B-A3B *with thinking*
   scores 97.3% on hard, through a different interface: seconds and thousands of tokens per decision.
 - **The image gain is on ImajevBench.** The paired tests were re-run on the shipped adapters (paired cluster sign-flip over 89 evidence
@@ -452,7 +477,7 @@ harness in `src/imajev_bench`, leaderboard in `bench/LEADERBOARD.md`. Run your m
 
 ## Limitations
 
-- **Single pass, no reasoning at inference.** JevBench hard trails reasoning models; JevK5 and Eikos-4B are ahead of every size.
+- **Single pass, no reasoning at inference.** JevBench hard trails reasoning models; on the public hard split JevK5 and Eikos-4B are ahead of every size, and on the official board the 4B is #3 on Intelligence alone.
 - **Over-confident without calibration.** Raw hard-item ECE is 0.16–0.19 (0.09–0.12 as shipped); serve with `--calibration` and `--rotations 4`.
 - **Photo-only caveat.** On photo-only verification (ABO + VizWiz) the raw probabilities are already calibrated and a single
   temperature over-softens them (previous adapters and temperatures: 4B 0.038 → 0.062, 9B 0.027 → 0.053; not re-measured). For mostly photo-against-record traffic, serve without

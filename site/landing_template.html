@@ -271,6 +271,13 @@ details{margin-top:18px} summary{cursor:pointer; font:.8rem var(--mono); color:v
 .note{font-size:.9rem; color:var(--ink2); max-width:46rem}
 
 /* bench */
+.rank{font:500 .92rem/1.5 var(--sans); color:var(--ink2)} .rank a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--rule)} .rank b{font-weight:600}
+.board{display:grid; gap:14px; margin-bottom:48px} .board ol{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.board li{display:grid; grid-template-columns:1.6rem minmax(9rem,15rem) minmax(0,1fr) 3.4rem; gap:12px; align-items:center; font-size:.92rem; color:var(--ink2)}
+.board li .n,.board li .v{font:400 .82rem/1 var(--mono)} .board li .v{text-align:right}
+.board li .bar{height:12px; background:var(--track)} .board li .bar i{display:block; height:100%; background:var(--other)}
+.board li.us{color:var(--ink); font-weight:600} .board li.us .bar i{background:var(--ink)} .board li.us .v{font-weight:600}
+@media (max-width:640px){ .board li{grid-template-columns:1.2rem minmax(0,1fr) 3.4rem; row-gap:4px} .board li .n{grid-area:1/1} .board li .name{grid-area:1/2} .board li .v{grid-area:1/3} .board li .bar{grid-area:2/2/3/4; height:8px} }
 .bench{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:40px}
 .bench figure{min-width:0; display:grid; gap:10px; align-content:start}
 .bench svg{width:100%; height:auto; display:block}
@@ -336,6 +343,7 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
         <a class="btn" href="#uses">See where it fits</a>
         <a class="btn" href="#developers">Run it yourself</a>
       </div>
+      <p class="rank"><a href="https://benchmarkheaven.com/jev-models"><b>#1 of 91 on JevBench v1.4.2.2</b></a>, the official board for Jev-class decision models (scored 27 Sep 2026), ahead of Jev 1.13.0. <a href="#benchmarks">See the board</a></p>
       <p class="facts"><span>Runs on your own hardware</span><span>Your data never leaves</span><span>Open weights, Apache-2.0</span><span>2B · 4B · 9B</span></p>
     </div>
     <div class="hero-demo">
@@ -453,16 +461,30 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
 
 <section class="s" id="benchmarks"><div class="wrap">
   <div class="s-head"><h2>Where it stands</h2>
-    <p>Same protocol for every system on each chart. imajev is not the most accurate option. It is the small one that runs on your own hardware, answers a question in about 0.1 s raw (0.3 s with 4 rotations) on one GPU, and can abstain.</p></div>
+    <p>On the official JevBench board, run by its maintainer, imajev-4b is #1 of 91 on the JevBench Score, which weighs intelligence, calibration, speed and cost equally. It is not the most accurate model on every test: on intelligence alone it is #3, and reasoning models score far higher at seconds per decision. It is the small one that runs on your own hardware, reads photos and can abstain.</p></div>
+  <div class="board">
+    <span class="label">JevBench v1.4.2.2 · official · scored 27 Sep 2026 · top 8 of 91</span>
+    <ol aria-label="JevBench v1.4.2.2 JevBench Score, top 8">
+      <li class="us"><span class="n">1</span><span class="name">Imajev-4B</span><span class="bar"><i style="width:84.2%"></i></span><span class="v">67.37</span></li>
+      <li><span class="n">2</span><span class="name">Plumb-4B</span><span class="bar"><i style="width:82.3%"></i></span><span class="v">65.84</span></li>
+      <li><span class="n">3</span><span class="name">decider-4b v2</span><span class="bar"><i style="width:80.2%"></i></span><span class="v">64.13</span></li>
+      <li><span class="n">4</span><span class="name">Jev 1.13.0 (closed original)</span><span class="bar"><i style="width:79.1%"></i></span><span class="v">63.29</span></li>
+      <li><span class="n">5</span><span class="name">JevK5 v0.2.0</span><span class="bar"><i style="width:77.5%"></i></span><span class="v">62.04</span></li>
+      <li><span class="n">6</span><span class="name">Cygnet</span><span class="bar"><i style="width:77.2%"></i></span><span class="v">61.76</span></li>
+      <li><span class="n">7</span><span class="name">Hopper</span><span class="bar"><i style="width:74.3%"></i></span><span class="v">59.43</span></li>
+      <li><span class="n">8</span><span class="name">Winnow-12B Q8</span><span class="bar"><i style="width:69.5%"></i></span><span class="v">55.58</span></li>
+    </ol>
+    <p class="foot">JevBench Score: equal-weight harmonic mean of Intelligence, Calibration, Speed and Cost (0 to 100). imajev-4b: Intelligence 52.2, Calibration 80.4 (best of the top 8), Speed 90.6, Cost 59.7; also #1 on the board's Capability ranking of Jev-class systems (66.3 vs Jev 1.13.0 at 64.7). Served with one option order and its calibration file. Source: <a href="https://benchmarkheaven.com/jev-models">benchmarkheaven.com/jev-models</a> · <a href="https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2">data</a>. On DecisionBench 1.0 the 4B is #3 of 60 in the official registry, behind two models built by that benchmark's team. On Image JevBench v0.1.2 the 2B is #5 and the 4B #11 of 49; a re-measure with the faster server is under way.</p>
+  </div>
   <div class="bench">
     <figure><div id="c-ib"></div><figcaption><b>ImajevBench v2.0-lite</b>, 279 test items: photos, records and text, including 21 items whose right answer is unknown. Dot is accuracy, line the 95% cluster interval. Frontier APIs answer by structured generation, a different interface taking 5 to 8 s per item; starred ones also screened the benchmark's images. 51 contrast sets pair a scene with an edited copy whose right answer must change, become unknown, or stay; the 4B gets all of a set right in 36 of 51 (9B 35, 2B 25).</figcaption></figure>
-    <figure><div id="c-jb"></div><figcaption><b>JevBench public hard split</b>, 111 text-only items, our runs with the jevbench harness on one H100; imajev as served, with 4 option rotations and its calibration file. Not the official leaderboard, which adds sealed items; an entry will be requested.</figcaption></figure>
+    <figure><div id="c-jb"></div><figcaption><b>JevBench public hard split</b>, 111 text-only items, our runs with the jevbench harness on one H100; imajev as served, with 4 option rotations and its calibration file. Not the official board (above), which adds sealed items and scores four axes.</figcaption></figure>
   </div>
   <div class="readings">
     <div><span class="label">Uplift</span><p>The imajev adapter lifts Qwen3.5-4B from 70.6% to 83.9% on ImajevBench (+13.3 points; the paired test gives p = 0.0001). The 4B is now ahead of the 9B there, though not significantly. On a 202-item hidden split that is never published item by item, the sizes score 74.3%, 84.2% and 84.7%.</p></div>
     <div><span class="label">Abstention</span><p>imajev-4b answers <i>unknown</i> correctly on 18 of 21 items, and wrongly abstains on 9 of 258 answerable ones. Jev-Omni, another open Jev-class model, has no abstain output: 78.5% overall, 0 of 21 unknown, and it is slightly ahead on answerable items.</p></div>
-    <div><span class="label">Not #1</span><p>JevK5 and Eikos-4B (73.9%) lead every imajev size on JevBench hard, by 3 to 4 items of 111; the 4B (72.1%) is above Hopper (67.6%). A reasoning model scores 97.3%, at seconds and thousands of tokens per decision.</p></div>
-    <div><span class="label">Other suites</span><p>DecisionBench 1.0 (23,900 rows, run with the benchmark's own harness): the 4B scores 79.7% with every row scored, up from 77.5%, which would place it 3rd of 56 on that public board behind Bosun v3.1 1.7B (84.9%) and 0.6B (81.2%); its calibration there got worse (ECE 0.024 to 0.069). On fastino's fast-decisions dev split it scores 60.4% across 17 domains (their board uses a held-out test split). Our typed conversion of S1-Bench is saturated at 99.1%, a check that simple questions did not regress.</p></div>
+    <div><span class="label">Hard split</span><p>On the public hard split alone, JevK5 and Eikos-4B (73.9%) lead every imajev size, by 3 to 4 items of 111; the 4B (72.1%) is above Hopper (67.6%). A reasoning model scores 97.3%, at seconds and thousands of tokens per decision.</p></div>
+    <div><span class="label">Other suites</span><p>DecisionBench 1.0 (23,900 rows, run with the benchmark's own harness): the 4B scores 79.7% with every row scored, up from 77.5%, #3 of 60 in the official registry (record merged 28 Sep 2026), behind the benchmark team's own Bosun v3.1 1.7B (84.9%) and 0.6B (81.2%); its calibration there got worse (ECE 0.024 to 0.069). On fastino's fast-decisions dev split it scores 60.4% across 17 domains (their board uses a held-out test split). Our typed conversion of S1-Bench is saturated at 99.1%, a check that simple questions did not regress.</p></div>
   </div>
 </div></section>
 
@@ -542,7 +564,7 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
     <div><h3>An empty field can read as "no"</h3><p>With a blank payment note, the 4B answered "not paid" instead of unknown. Unknown is trained for missing evidence, not guaranteed.</p></div>
     <div><h3>Scribbles read as letters</h3><p>On the tracing pad it reads 20 of 20 traced letters and numbers correctly but calls 8 of 10 scribbles a letter. In 6 of those the confidence is low and the app asks for another try; in 2 it tells the child they drew an A.</p></div>
     <div><h3>Over-confident without calibration</h3><p>Raw ECE on hard text items is 0.16 to 0.19. Use the calibration file there, or fit one on your own data.</p></div>
-    <div><h3>The 2B rarely abstains</h3><p>5 of 21 unknown items on ImajevBench, against 14 for the 4B and 15 for the 9B.</p></div>
+    <div><h3>The 2B rarely abstains</h3><p>5 of 21 unknown items on ImajevBench, against 18 for the 4B and 15 for the 9B.</p></div>
     <div><h3>Real photo pairs are the hardest task</h3><p>Two photos with a known edit are near-perfect (98% on our pairs probe), but natural pairs of real photos scored 41.8% on an earlier 4B checkpoint; not yet re-run on the release.</p></div>
     <div><h3>English, two photos, a preview benchmark</h3><p>ImajevBench images are AI-generated and model-audited, with no human audit yet.</p></div>
   </div>

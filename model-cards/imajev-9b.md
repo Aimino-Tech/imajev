@@ -2,6 +2,8 @@
 
 The full model card lives on Hugging Face: https://huggingface.co/mohit67890/imajev-9b
 
+The family's imajev-4b is #1 of 91 on JevBench v1.4.2.2 (official board, scored 27 Sep 2026; https://benchmarkheaven.com/jev-models). This 9B has no official text-board entry.
+
 Summary: Qwen3.5-9B + LoRA (r16/α32, language layers) + 255-code decision readout; the quality tier (p50 96 ms raw, 316 ms as shipped with four option orders, per decision on one
 H100 under load, ~19 GB resident) and (in an earlier version) the labeller of the 2B's and 4B's new photo-source data. ImajevBench v2.0-lite test 82.1%, JevBench public hard 69.4%
 (our runs, as shipped). Trained on about half a million human-labelled image and text decisions from licence-checked sources, then hard

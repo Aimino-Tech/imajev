@@ -189,7 +189,7 @@ def chart_jevbench(t, name):
             ("imajev-9b", 69.4, True), ("Hopper", 67.6, False), ("imajev-2b", 60.4, True),
             ("cua-s1-4b (GUI-action LoRA)", 52.3, False), ("Qwen3.5-4B base, generation", 48.6, False), ("mojev 0.85B", 33.3, False)]
     fig = base_fig(t, 8.8, 5.0, "JevBench public hard split (111 items, text-only)",
-                   "Same protocol for every system: jevbench harness, typesafe adapter, one H100, serial. Competitive, not #1.",
+                   "Same protocol for every system: jevbench harness, typesafe adapter, one H100, serial. Public hard split only.",
                    "Our runs, 24 to 26 Sept 2026; imajev as served (4 rotations, calibration file); not the official board (sealed items, 4-axis score). Source: results/benchmarks/")
     ax = fig.add_axes([0.30, 0.13, 0.63, 0.70])
     for i, (lab, v, ours) in enumerate(rows):
@@ -381,6 +381,57 @@ def build_gallery():
 # =====================================================================================================================
 # Social card (1280×640 PNG) for GitHub's repository settings and link previews
 # =====================================================================================================================
+JEVBENCH_OFFICIAL = [  # JevBench v1.4.2.2 (Benchmark Heaven, scored 27 Sep 2026), top 8 of 91 by JevBench Score
+    ("Imajev-4B", 67.37, True), ("Plumb-4B", 65.84, False), ("decider-4b v2", 64.13, False),
+    ("Jev 1.13.0 (closed original)", 63.29, False), ("JevK5 v0.2.0", 62.04, False), ("Cygnet", 61.76, False),
+    ("Hopper", 59.43, False), ("Winnow-12B Q8", 55.58, False)]
+JEVBENCH_OFFICIAL_SOURCE = "Run by the maintainer · benchmarkheaven.com/jev-models · data: fstandhartinger/jevbench results/v1.4.2.2"
+
+
+def draw_official_bars(ax, t, label_x=-1.2, size=10):
+    for i, (lab, v, ours) in enumerate(JEVBENCH_OFFICIAL):
+        col = t["accent"] if ours else t["other"]
+        ax.barh(i, v, height=0.62, color=col, zorder=2)
+        ax.text(v + 0.8, i, f"{v:.2f}", va="center", fontproperties=fp(MONO_M if ours else MONO, size - 1), color=t["ink"] if ours else t["ink2"])
+        ax.text(label_x, i, f"{i + 1}   {lab}", ha="right", va="center", fontproperties=fp(SANS_B if ours else SANS, size),
+                color=t["ink"] if ours else t["ink2"])
+    ax.set_xlim(0, 80); ax.set_ylim(len(JEVBENCH_OFFICIAL) - 0.4, -0.6); ax.set_yticks([])
+    ax.set_xticks([0, 20, 40, 60, 80]); ax.set_xticklabels(["0", "20", "40", "60", "80"])
+    style_ax(ax, t)
+    for lab in ax.texts: lab.set_clip_on(False)
+
+
+def chart_jevbench_official(t, name):
+    fig = base_fig(t, 8.8, 4.8, "JevBench v1.4.2.2: imajev-4b is #1 of 91",
+                   "JevBench Score (equal-weight harmonic mean of Intelligence, Calibration, Speed, Cost), scored 27 Sep 2026. Top 8 shown.",
+                   JEVBENCH_OFFICIAL_SOURCE)
+    ax = fig.add_axes([0.33, 0.13, 0.60, 0.69])
+    draw_official_bars(ax, t)
+    save(fig, OUT / "charts" / f"jevbench-official-{name}.svg", t)
+
+
+def build_announce_cards():
+    """Raster result cards for posts: 1200x675 (X / LinkedIn) and 1080x1350 (Instagram / LinkedIn portrait), light theme."""
+    t = THEMES["light"]
+    (OUT / "social").mkdir(parents=True, exist_ok=True)
+    for w, h, fname in ((12.0, 6.75, "jevbench-no1-1200x675.png"), (10.8, 13.5, "jevbench-no1-1080x1350.png")):
+        fig = plt.figure(figsize=(w, h), dpi=100); fig.patch.set_facecolor(t["bg"])
+        tall = h > w
+        top = 1 - 0.55 / h
+        fig.text(0.06, top, "imajev", fontproperties=fp(MARKFONT, 22), color=t["ink"], va="top")
+        fig.text(0.06, top - 0.75 / h, "#1 of 91 on JevBench", fontproperties=fp(DISPLAY, 46 if tall else 38), color=t["ink"], va="top")
+        fig.text(0.06, top - (1.75 if tall else 1.5) / h, "JevBench v1.4.2.2 · scored 27 Sep 2026 · Benchmark Heaven",
+                 fontproperties=fp(MONO, 13 if tall else 12), color=t["ink2"], va="top")
+        fig.text(0.06, top - (2.25 if tall else 1.95) / h,
+                 "A 4B open model, ahead of Jev 1.13.0. Open weights, Apache-2.0. Reads images too.",
+                 fontproperties=fp(SANS, 14 if tall else 12.5), color=t["ink2"], va="top")
+        ax = fig.add_axes([0.42, 0.13, 0.50, 0.58] if tall else [0.34, 0.12, 0.58, 0.46])
+        draw_official_bars(ax, t, size=13 if tall else 11)
+        fig.text(0.06, 0.35 / h, "benchmarkheaven.com/jev-models   ·   huggingface.co/mohit67890/imajev-4b",
+                 fontproperties=fp(MONO, 11 if tall else 10), color=t["muted"], va="bottom")
+        fig.savefig(OUT / "social" / fname, facecolor=t["bg"]); plt.close(fig)
+
+
 def build_social():
     t = THEMES["dark"]
     (OUT / "social").mkdir(parents=True, exist_ok=True)
@@ -417,6 +468,7 @@ def build_social():
         fig.text(0.975, y - 0.034, f"{v:.3f}", fontproperties=fp(MONO, 10.5), color=t["ink2"], va="center", ha="right")
         y -= 0.105
     fig.text(0.60, 0.07, "github.com/mohit67890/imajev", fontproperties=fp(MONO_M, 12.5), color=t["accent"])
+    fig.text(0.055, 0.07, "#1 of 91 · JevBench v1.4.2.2 · scored 27 Sep 2026", fontproperties=fp(MONO_M, 13), color=t["ink"])
     fig.savefig(OUT / "social" / "social-card.png", facecolor=t["bg"]); plt.close(fig)
 
 
@@ -613,9 +665,10 @@ if __name__ == "__main__":
     (OUT / "charts").mkdir(parents=True, exist_ok=True)
     build_brand()
     for name, t in THEMES.items():
-        chart_imajevbench(t, name); chart_jevbench(t, name); chart_calibration(t, name); chart_uplift(t, name)
+        chart_imajevbench(t, name); chart_jevbench(t, name); chart_jevbench_official(t, name); chart_calibration(t, name); chart_uplift(t, name)
     build_gallery()
     build_social()
+    build_announce_cards()
     if (SITE / "report_template.html").exists():
         build_report()
     if (SITE / "landing_template.html").exists():
