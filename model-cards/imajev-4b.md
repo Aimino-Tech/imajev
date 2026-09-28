@@ -2,7 +2,7 @@
 
 The full model card lives on Hugging Face: https://huggingface.co/mohit67890/imajev-4b
 
-Official boards: **#1 of 91 on JevBench v1.4.2.2** (scored 27 Sep 2026; JevBench Score 67.37; https://benchmarkheaven.com/jev-models; adapter revision `c9e5f132`, served with
+Official boards: **#1 of 49 on Image JevBench v0.1.3** (released 28 Sep 2026; composite 76.39; https://benchmarkheaven.com/image-jev-bench; fast server `--fast --merge-lora`), **#1 of 91 on JevBench v1.4.2.2** (scored 27 Sep 2026; JevBench Score 67.37; https://benchmarkheaven.com/jev-models; adapter revision `c9e5f132`, served with
 `--rotations 1 --calibration calibration.json`) and **#3 of 56 models on DecisionBench (eng, v1)** (79.65; https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard; results PR Hanno-Labs/decision-bench-results#68, merged 28 Sep 2026).
 
 Summary (phase-3 version, 2026-09-26): Qwen3.5-4B + LoRA (r64/α128, language layers) + 256-code decision readout (255 options + unknown);

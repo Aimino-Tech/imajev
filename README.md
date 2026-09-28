@@ -13,10 +13,11 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
   <a href="https://huggingface.co/datasets/mohit67890/imajev-bench"><img alt="ImajevBench" src="https://img.shields.io/badge/benchmark-ImajevBench-555555?style=flat-square"></a>
 </p>
 
-<p align="center"><a href="#independent-results"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/social/ranks-dark.png"><img alt="#1 of 91 on JevBench v1.4.2.2 (official board, scored 27 Sep 2026), ahead of Jev 1.13.0. #3 of 56 on DecisionBench (eng, v1) (official leaderboard, 28 Sep 2026), ahead of GPT-5.6 Luna and DeepSeek V4.1 (552B)." src="docs/assets/social/ranks-light.png" width="820"></picture></a></p>
+<p align="center"><a href="#independent-results"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/social/ranks-dark.png"><img alt="#1 of 91 on JevBench v1.4.2.2 (text, scored 27 Sep 2026), ahead of Jev 1.13.0. #1 of 49 on Image JevBench v0.1.3 (images, released 28 Sep 2026), ahead of Jev-Omni. #3 of 56 on DecisionBench (eng, v1), 28 Sep 2026, ahead of GPT-5.6 Luna." src="docs/assets/social/ranks-light.png" width="820"></picture></a></p>
 
 <p align="center">
   <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=for-the-badge"></a>
+  <a href="https://benchmarkheaven.com/image-jev-bench"><img alt="Image JevBench v0.1.3: #1 of 49" src="https://img.shields.io/badge/Image%20JevBench%20v0.1.3-%231%20of%2049-111111?style=for-the-badge"></a>
   <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench: #3 of 56 models" src="https://img.shields.io/badge/DecisionBench-%233%20of%2056%20models-111111?style=for-the-badge"></a>
 </p>
 
@@ -33,6 +34,12 @@ Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is ru
 Scored 27 Sep 2026. imajev-4b 67.37, ahead of Plumb-4B (65.84) and TypeSafe's own Jev 1.13.0 (63.29).
 
 <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2 Composite Score, screenshot of benchmarkheaven.com: 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 3 decider-4b v2 64.1, 4 Jev 1.13.0 63.3" src="docs/assets/proof/proof-jevbench-score.png"></a>
+
+### #1 of 49 on Image JevBench v0.1.3
+
+Released 28 Sep 2026. imajev-4b 76.39, ahead of Jev-Omni (12B, 73.10) and NeoHorse Jev 4B (71.94); imajev-2b is #6. Sealed accuracy 83.3%, second of 44 self-hosted systems. Measured by the maintainer on the fast server (`--fast --merge-lora`, one option order, shipped calibration).
+
+<a href="https://benchmarkheaven.com/image-jev-bench"><img alt="Image JevBench v0.1.3 composite score, screenshot of benchmarkheaven.com: 1 Imajev-4B 76.39, 2 Jev-Omni 73.10, 3 NeoHorse Jev 4B 71.94, 6 imajev 2B 68.72" src="docs/assets/proof/proof-image-jevbench.png"></a>
 
 ### #1 on JevBench's headline Capability ranking
 
@@ -338,7 +345,7 @@ Measured by each benchmark's maintainer, not by us. Boards move; every rank is q
 |---|---|---|
 | **JevBench v1.4.2.2** (Benchmark Heaven, scored 27 Sep 2026; 91 ranked systems) | **imajev-4b #1, JevBench Score 67.37** (Intelligence 52.2, Calibration 80.4, Speed 90.6, Cost 59.7). Plumb-4B 65.84, decider-4b v2 64.13, Jev 1.13.0 63.29. #1 under four of the board's five weightings (#2 under speed-heavy 20:60:20, #3 on Intelligence alone); best Calibration of the top 8. Also #1 on the board's Capability ranking of Jev-class systems (mean of Intelligence and Calibration): 66.3 vs Jev 1.13.0 64.7. Cost on the board's estimate: $0.022 per 1,000 decisions (Jev $0.040). | [board](https://benchmarkheaven.com/jev-models) · [data](https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2) |
 | **DecisionBench (eng, v1)** (Hanno-Labs, 23 tasks, 23,900 rows; 56 models) | **imajev-4b #3, 79.65** (mean task score), every row answered; ahead of GLM-5.3 Flash 73.41, Jev 1.13 71.90, DeepSeek V4.1 Flash 70.68, GPT-5.6 Luna 69.04. The two above are the benchmark team's own Bosun v3.1 1.7B (87.29) and 0.6B (83.20). On the separate **Reasoning** track: **#3, 80.58**, behind GLM-5.3 Flash (86.92) and GPT-5.6 Luna (86.17). | [leaderboard](https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard) · [registry](https://github.com/Hanno-Labs/decision-bench-results) (results PR #68, merged 28 Sep 2026) |
-| **Image JevBench v0.1.2** (Benchmark Heaven; 49 systems) | imajev-2b #5 (68.72), imajev-4b #11 (65.72). The 4B has the 2nd-highest sealed accuracy of 44 self-hosted systems (83.1%); its rank is held back by GPU time on the Cost axis. A re-measure with the faster server (`--fast --merge-lora`) is under way. | [board](https://benchmarkheaven.com/image-jev-bench) |
+| **Image JevBench v0.1.3** (Benchmark Heaven, released 28 Sep 2026; 49 systems, 684 items) | **imajev-4b #1, composite 76.39** (Intelligence 73.8, Calibration 90.5, Speed 87.6, Cost 61.2), ahead of Jev-Omni 73.10 and NeoHorse Jev 4B 71.94; sealed accuracy 83.3% (380/456), second of 44 self-hosted systems; $0.0197 per 1,000 decisions, p50 0.099 s. Measured with this repository at `8501f5c3`, adapter `c9e5f132`, `--fast --merge-lora --rotations 1 --calibration calibration.json` (it was #11 at 65.72 on v0.1.2 with the slower server). imajev-2b #6 (68.72). The board notes that v0.1.3's 333 fresh sealed items are its own synthetic images. | [board](https://benchmarkheaven.com/image-jev-bench) · [data](https://github.com/fstandhartinger/model-market-comparison/blob/7fadb0b0/data/raw/benchmarks/jevbench/multimodal-preview/preview.json) |
 
 Official JevBench setup: adapter `mohit67890/imajev-4b` at revision `c9e5f132`, this repository at `a0134749`, served with
 `--rotations 1 --calibration calibration.json` (one option order, the shipped calibration file).
