@@ -18,7 +18,7 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
 
 <p align="center">
   <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=flat-square"></a>
-  <a href="https://github.com/Hanno-Labs/decision-bench-results"><img alt="DecisionBench 1.0: #3 of 60" src="https://img.shields.io/badge/DecisionBench%201.0-%233%20of%2060-111111?style=flat-square"></a>
+  <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench: #3 of 56 models" src="https://img.shields.io/badge/DecisionBench-%233%20of%2056%20models-111111?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -35,6 +35,28 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b></a> · <a href="https://mohit67890.github.io/imajev/"><b>Website</b></a> · <a href="#quickstart">Quickstart</a> · <a href="#checked-not-cherry-picked">Checked examples</a> · <a href="#results">Results</a> · <a href="https://mohit67890.github.io/imajev/report/">Technical report</a></p>
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/request-listing-dark.png"><img alt="imajev-4b checks a listing against its photo: listing.color says red, the photo shows beige shoes; the model names listing.color as contradicted at 0.999 and the app holds the listing" src="docs/assets/readme/request-listing-light.png"></picture></p>
+
+## Independent results
+
+Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is run by its own maintainer, not by us; click through for the live page.
+
+**#1 of 91 on JevBench v1.4.2.2** (scored 27 Sep 2026). imajev-4b 67.37, ahead of Plumb-4B (65.84) and TypeSafe's own Jev 1.13.0 (63.29).
+
+<a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2 Composite Score, screenshot of benchmarkheaven.com: 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 3 decider-4b v2 64.1, 4 Jev 1.13.0 63.3" src="docs/assets/proof/proof-jevbench-score.png"></a>
+
+**#1 on the board's headline ranking.** "Imajev-4B leads the Jev-class systems with 66.3" (Capability: intelligence and calibration, among systems within 2× Jev's cost and latency).
+
+<a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench Capability ranking of Jev-class systems, screenshot: 1 Imajev-4B 66.3, 2 Jev 1.13.0 64.7, 3 Plumb-4B 64.2" src="docs/assets/proof/proof-jevbench-capability.png"></a>
+
+**#3 of 56 models on DecisionBench (eng, v1)**, 79.65: ahead of GLM-5.3 Flash (320B), Jev 1.13, DeepSeek V4.1 Flash (552B) and GPT-5.6 Luna. The two above are the benchmark team's own Bosun models.
+
+<a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench (eng, v1) leaderboard, screenshot: 1 bosun-v3.1-1.7b 87.29, 2 bosun-v3.1-0.6b 83.20, 3 imajev-4b 79.65, 7 glm-5.3-flash 73.41, 8 jev-1.13 71.90, 9 deepseek-v4.1-flash 70.68, 12 gpt-5.6-luna 69.04" src="docs/assets/proof/proof-decisionbench.png"></a>
+
+**#3 on DecisionBench Reasoning**, 80.58: behind GLM-5.3 Flash and GPT-5.6 Luna, ahead of DeepSeek V4.1 Flash (552B) and Jev 1.13.
+
+<a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench (Reasoning, eng, v1) leaderboard, screenshot: 1 glm-5.3-flash 86.92, 2 gpt-5.6-luna 86.17, 3 imajev-4b 80.58, 4 deepseek-v4.1-flash 76.92, 6 jev-1.13 74.50" src="docs/assets/proof/proof-decisionbench-reasoning.png"></a>
+
+<sub>Boards move as new systems are added; ranks are quoted with the board version and the date. Archived copies and the raw data are linked in <a href="#official-leaderboards">Official leaderboards</a>.</sub>
 
 ## Try it live
 
@@ -317,7 +339,7 @@ Measured by each benchmark's maintainer, not by us. Boards move; every rank is q
 | Board | imajev result | Source |
 |---|---|---|
 | **JevBench v1.4.2.2** (Benchmark Heaven, scored 27 Sep 2026; 91 ranked systems) | **imajev-4b #1, JevBench Score 67.37** (Intelligence 52.2, Calibration 80.4, Speed 90.6, Cost 59.7). Plumb-4B 65.84, decider-4b v2 64.13, Jev 1.13.0 63.29. #1 under four of the board's five weightings (#2 under speed-heavy 20:60:20, #3 on Intelligence alone); best Calibration of the top 8. Also #1 on the board's Capability ranking of Jev-class systems (mean of Intelligence and Calibration): 66.3 vs Jev 1.13.0 64.7. Cost on the board's estimate: $0.022 per 1,000 decisions (Jev $0.040). | [board](https://benchmarkheaven.com/jev-models) · [data](https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2) |
-| **DecisionBench 1.0** (Hanno-Labs, 23,900 rows) | **imajev-4b #3 of 60 records**: 79.69% primary, every row scored, +7.67 pp vs Jev 1.13 (72.03%). The two above are the benchmark team's own Bosun v3.1 1.7B and 0.6B. | [registry](https://github.com/Hanno-Labs/decision-bench-results) (results PR #68, merged 28 Sep 2026) |
+| **DecisionBench (eng, v1)** (Hanno-Labs, 23 tasks, 23,900 rows; 56 models) | **imajev-4b #3, 79.65** (mean task score), every row answered; ahead of GLM-5.3 Flash 73.41, Jev 1.13 71.90, DeepSeek V4.1 Flash 70.68, GPT-5.6 Luna 69.04. The two above are the benchmark team's own Bosun v3.1 1.7B (87.29) and 0.6B (83.20). On the separate **Reasoning** track: **#3, 80.58**, behind GLM-5.3 Flash (86.92) and GPT-5.6 Luna (86.17). | [leaderboard](https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard) · [registry](https://github.com/Hanno-Labs/decision-bench-results) (results PR #68, merged 28 Sep 2026) |
 | **Image JevBench v0.1.2** (Benchmark Heaven; 49 systems) | imajev-2b #5 (68.72), imajev-4b #11 (65.72). The 4B has the 2nd-highest sealed accuracy of 44 self-hosted systems (83.1%); its rank is held back by GPU time on the Cost axis. A re-measure with the faster server (`--fast --merge-lora`) is under way. | [board](https://benchmarkheaven.com/image-jev-bench) |
 
 Official JevBench setup: adapter `mohit67890/imajev-4b` at revision `c9e5f132`, this repository at `a0134749`, served with

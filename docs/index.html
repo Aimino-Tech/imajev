@@ -288,6 +288,8 @@ details{margin-top:18px} summary{cursor:pointer; font:.8rem var(--mono); color:v
 .board li .bar{height:12px; background:var(--track)} .board li .bar i{display:block; height:100%; background:var(--other)}
 .board li.us{color:var(--ink); font-weight:600} .board li.us .bar i{background:var(--ink)} .board li.us .v{font-weight:600}
 @media (max-width:640px){ .board li{grid-template-columns:1.2rem minmax(0,1fr) 3.4rem; row-gap:4px} .board li .n{grid-area:1/1} .board li .name{grid-area:1/2} .board li .v{grid-area:1/3} .board li .bar{grid-area:2/2/3/4; height:8px} }
+.proof{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:36px 32px} .proof figure.wide{grid-column:1/-1} .proof figure{display:grid; gap:10px; align-content:start; min-width:0} .proof img{width:100%; height:auto; display:block; border:1px solid var(--rule)} .proof figcaption{font-size:.9rem; line-height:1.5; color:var(--ink2)} .proof figcaption b{color:var(--ink)}
+@media (max-width:760px){ .proof{grid-template-columns:minmax(0,1fr)} }
 .bench{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:40px}
 .bench figure{min-width:0; display:grid; gap:10px; align-content:start}
 .bench svg{width:100%; height:auto; display:block}
@@ -340,7 +342,7 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
 <body>
 <header class="top"><div class="wrap">
   <a class="word" href="#top"><img class="l" src="assets/brand/mark-light.svg" alt=""><img class="d" src="assets/brand/mark-dark.svg" alt="">imajev</a>
-  <nav aria-label="Sections"><a href="#apart">Why imajev</a><a href="#uses">Use cases</a><a href="#examples">Examples</a><a href="#checks">Checks</a><a href="#benchmarks">Benchmarks</a><a href="#made">Training</a><a href="#specs">Specs</a><a href="#developers">Developers</a><a href="report/">Report</a><a href="https://github.com/mohit67890/imajev">GitHub</a></nav>
+  <nav aria-label="Sections"><a href="#proof">Results</a><a href="#apart">Why imajev</a><a href="#uses">Use cases</a><a href="#examples">Examples</a><a href="#checks">Checks</a><a href="#benchmarks">Benchmarks</a><a href="#made">Training</a><a href="#specs">Specs</a><a href="#developers">Developers</a><a href="report/">Report</a><a href="https://github.com/mohit67890/imajev">GitHub</a></nav>
 </div></header>
 
 <main id="top">
@@ -368,6 +370,21 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
     </div>
   </div>
 </div>
+
+<section class="s" id="proof"><div class="wrap">
+  <div class="s-head"><h2>Independent results</h2>
+    <p>Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is run by its own maintainer, not by us.</p></div>
+  <div class="proof">
+    <figure class="wide"><a href="https://benchmarkheaven.com/jev-models"><img src="assets/proof/proof-jevbench-score.png" alt="JevBench v1.4.2.2 Composite Score: 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 3 decider-4b v2 64.1, 4 Jev 1.13.0 63.3" loading="lazy"></a>
+      <figcaption><b>#1 of 91 on JevBench v1.4.2.2</b> (scored 27 Sep 2026). imajev-4b 67.37, ahead of Plumb-4B and TypeSafe's own Jev 1.13.0.</figcaption></figure>
+    <figure class="wide"><a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img src="assets/proof/proof-decisionbench.png" alt="DecisionBench (eng, v1): 3 imajev-4b 79.65, ahead of glm-5.3-flash, jev-1.13, deepseek-v4.1-flash and gpt-5.6-luna" loading="lazy"></a>
+      <figcaption><b>#3 of 56 models on DecisionBench</b>, 79.65: ahead of GLM-5.3 Flash (320B), Jev 1.13, DeepSeek V4.1 Flash (552B) and GPT-5.6 Luna. The two above are the benchmark team's own models.</figcaption></figure>
+    <figure><a href="https://benchmarkheaven.com/jev-models"><img src="assets/proof/proof-jevbench-capability.png" alt="JevBench Capability ranking: Imajev-4B leads the Jev-class systems with 66.3" loading="lazy"></a>
+      <figcaption><b>#1 on the board's headline ranking.</b> "Imajev-4B leads the Jev-class systems with 66.3."</figcaption></figure>
+    <figure><a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img src="assets/proof/proof-decisionbench-reasoning.png" alt="DecisionBench Reasoning: 3 imajev-4b 80.58, behind glm-5.3-flash and gpt-5.6-luna" loading="lazy"></a>
+      <figcaption><b>#3 on DecisionBench Reasoning</b>, 80.58: behind GLM-5.3 Flash and GPT-5.6 Luna, ahead of DeepSeek V4.1 Flash and Jev 1.13.</figcaption></figure>
+  </div>
+</div></section>
 
 <section class="s" id="apart"><div class="wrap">
   <div class="s-head"><h2>What sets it apart</h2>
@@ -486,7 +503,7 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
       <li><span class="n">7</span><span class="name">Hopper</span><span class="bar"><i style="width:74.3%"></i></span><span class="v">59.43</span></li>
       <li><span class="n">8</span><span class="name">Winnow-12B Q8</span><span class="bar"><i style="width:69.5%"></i></span><span class="v">55.58</span></li>
     </ol>
-    <p class="foot">JevBench Score: equal-weight harmonic mean of Intelligence, Calibration, Speed and Cost (0 to 100). imajev-4b: Intelligence 52.2, Calibration 80.4 (best of the top 8), Speed 90.6, Cost 59.7; also #1 on the board's Capability ranking of Jev-class systems (66.3 vs Jev 1.13.0 at 64.7). Served with one option order and its calibration file. Source: <a href="https://benchmarkheaven.com/jev-models">benchmarkheaven.com/jev-models</a> · <a href="https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2">data</a>. On DecisionBench 1.0 the 4B is #3 of 60 in the official registry, behind two models built by that benchmark's team. On Image JevBench v0.1.2 the 2B is #5 and the 4B #11 of 49; a re-measure with the faster server is under way.</p>
+    <p class="foot">JevBench Score: equal-weight harmonic mean of Intelligence, Calibration, Speed and Cost (0 to 100). imajev-4b: Intelligence 52.2, Calibration 80.4 (best of the top 8), Speed 90.6, Cost 59.7; also #1 on the board's Capability ranking of Jev-class systems (66.3 vs Jev 1.13.0 at 64.7). Served with one option order and its calibration file. Source: <a href="https://benchmarkheaven.com/jev-models">benchmarkheaven.com/jev-models</a> · <a href="https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2">data</a>. On <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard">DecisionBench</a> the 4B is #3 of 56 models (79.65), behind two models built by that benchmark's team. On Image JevBench v0.1.2 the 2B is #5 and the 4B #11 of 49; a re-measure with the faster server is under way.</p>
   </div>
   <div class="bench">
     <figure><div id="c-ib"></div><figcaption><b>ImajevBench v2.0-lite</b>, 279 test items: photos, records and text, including 21 items whose right answer is unknown. Dot is accuracy, line the 95% cluster interval. Frontier APIs answer by structured generation, a different interface taking 5 to 8 s per item; starred ones also screened the benchmark's images. 51 contrast sets pair a scene with an edited copy whose right answer must change, become unknown, or stay; the 4B gets all of a set right in 36 of 51 (9B 35, 2B 25).</figcaption></figure>
