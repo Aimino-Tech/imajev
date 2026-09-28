@@ -410,6 +410,27 @@ def chart_jevbench_official(t, name):
     save(fig, OUT / "charts" / f"jevbench-official-{name}.svg", t)
 
 
+def build_rank_banner():
+    """README / model-card hero: the two official ranks, big. assets/social/ranks-{light,dark}.png (1600x500)."""
+    (OUT / "social").mkdir(parents=True, exist_ok=True)
+    cols = [("#1", "of 91", "JevBench v1.4.2.2", "official board · scored 27 Sep 2026", "ahead of Jev 1.13.0 and 89 other systems"),
+            ("#3", "of 56", "DecisionBench (eng, v1)", "official leaderboard · 28 Sep 2026", "ahead of GPT-5.6 Luna and DeepSeek V4.1 (552B)")]
+    W, H = 10.0, 3.125
+    for name, t in THEMES.items():
+        fig = plt.figure(figsize=(W, H), dpi=160); fig.patch.set_facecolor(t["bg"])
+        r = fig.canvas.get_renderer()
+        for i, (big, of, board, when, note) in enumerate(cols):
+            x = 0.06 + i * 0.5
+            tb = fig.text(x, 0.52, big, fontproperties=fp(DISPLAY, 64), color=t["ink"], va="baseline")
+            bw = tb.get_window_extent(renderer=r).width / (W * 160)
+            fig.text(x + bw + 0.012, 0.52, of, fontproperties=fp(DISPLAY, 26), color=t["ink2"], va="baseline")
+            fig.text(x, 0.36, board, fontproperties=fp(SANS_B, 14), color=t["ink"], va="center")
+            fig.text(x, 0.235, when, fontproperties=fp(MONO, 9.5), color=t["muted"], va="center")
+            fig.text(x, 0.12, note, fontproperties=fp(SANS, 10.5), color=t["ink2"], va="center")
+        fig.lines.append(matplotlib.lines.Line2D([0.5 - 0.02, 0.5 - 0.02], [0.08, 0.9], transform=fig.transFigure, color=t["hair"], linewidth=1))
+        fig.savefig(OUT / "social" / f"ranks-{name}.png", facecolor=t["bg"]); plt.close(fig)
+
+
 def build_announce_cards():
     """Raster result cards for posts: 1200x675 (X / LinkedIn) and 1080x1350 (Instagram / LinkedIn portrait), light theme."""
     t = THEMES["light"]
@@ -669,6 +690,7 @@ if __name__ == "__main__":
     build_gallery()
     build_social()
     build_announce_cards()
+    build_rank_banner()
     if (SITE / "report_template.html").exists():
         build_report()
     if (SITE / "landing_template.html").exists():

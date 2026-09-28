@@ -13,50 +13,48 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
   <a href="https://huggingface.co/datasets/mohit67890/imajev-bench"><img alt="ImajevBench" src="https://img.shields.io/badge/benchmark-ImajevBench-555555?style=flat-square"></a>
 </p>
 
-<p align="center"><b>#1 of 91 on <a href="https://benchmarkheaven.com/jev-models">JevBench v1.4.2.2</a></b>, the official board for Jev-class decision models (scored 27 Sep 2026)<br>
-<sub>Run by the benchmark's maintainer, ahead of Jev 1.13.0 itself. Details in <a href="#official-leaderboards">Official leaderboards</a>.</sub></p>
+<p align="center"><a href="#independent-results"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/social/ranks-dark.png"><img alt="#1 of 91 on JevBench v1.4.2.2 (official board, scored 27 Sep 2026), ahead of Jev 1.13.0. #3 of 56 on DecisionBench (eng, v1) (official leaderboard, 28 Sep 2026), ahead of GPT-5.6 Luna and DeepSeek V4.1 (552B)." src="docs/assets/social/ranks-light.png" width="820"></picture></a></p>
 
 <p align="center">
-  <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=flat-square"></a>
-  <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench: #3 of 56 models" src="https://img.shields.io/badge/DecisionBench-%233%20of%2056%20models-111111?style=flat-square"></a>
+  <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=for-the-badge"></a>
+  <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench: #3 of 56 models" src="https://img.shields.io/badge/DecisionBench-%233%20of%2056%20models-111111?style=for-the-badge"></a>
 </p>
-
-<p align="center">
-  <a href="#results"><img alt="ImajevBench 83.9%" src="https://img.shields.io/badge/ImajevBench-83.9%25-2f6fdd?style=flat-square"></a>
-  <a href="#results"><img alt="JevBench hard 72.1%" src="https://img.shields.io/badge/JevBench%20hard-72.1%25-2f6fdd?style=flat-square"></a>
-  <a href="#results"><img alt="DecisionBench 79.7%" src="https://img.shields.io/badge/DecisionBench-79.7%25-2f6fdd?style=flat-square"></a>
-  <a href="#results"><img alt="fast-decisions dev 60.4%" src="https://img.shields.io/badge/fast--decisions%20dev-60.4%25-2f6fdd?style=flat-square"></a>
-  <a href="#results"><img alt="S1-Bench typed 99.1%" src="https://img.shields.io/badge/S1--Bench%20typed-99.1%25-2f6fdd?style=flat-square"></a>
-</p>
-<p align="center"><sub>imajev-4b, our runs, as shipped (4 option orders + calibration). DecisionBench 1.0 with its own harness, every row scored, #3 of 60 in its official registry; fast-decisions is the dev split; S1-Bench is our typed conversion, not an S1-Bench score. Details and the 2B / 9B in <a href="#results">Results</a>.</sub></p>
 
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><img alt="Try the live demo on Hugging Face Spaces" src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg.svg"></a></p>
 
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b></a> · <a href="https://mohit67890.github.io/imajev/"><b>Website</b></a> · <a href="#quickstart">Quickstart</a> · <a href="#checked-not-cherry-picked">Checked examples</a> · <a href="#results">Results</a> · <a href="https://mohit67890.github.io/imajev/report/">Technical report</a></p>
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/request-listing-dark.png"><img alt="imajev-4b checks a listing against its photo: listing.color says red, the photo shows beige shoes; the model names listing.color as contradicted at 0.999 and the app holds the listing" src="docs/assets/readme/request-listing-light.png"></picture></p>
-
 ## Independent results
 
 Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is run by its own maintainer, not by us; click through for the live page.
 
-**#1 of 91 on JevBench v1.4.2.2** (scored 27 Sep 2026). imajev-4b 67.37, ahead of Plumb-4B (65.84) and TypeSafe's own Jev 1.13.0 (63.29).
+### #1 of 91 on JevBench v1.4.2.2
+
+Scored 27 Sep 2026. imajev-4b 67.37, ahead of Plumb-4B (65.84) and TypeSafe's own Jev 1.13.0 (63.29).
 
 <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2 Composite Score, screenshot of benchmarkheaven.com: 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 3 decider-4b v2 64.1, 4 Jev 1.13.0 63.3" src="docs/assets/proof/proof-jevbench-score.png"></a>
 
-**#1 on the board's headline ranking.** "Imajev-4B leads the Jev-class systems with 66.3" (Capability: intelligence and calibration, among systems within 2× Jev's cost and latency).
+### #1 on JevBench's headline Capability ranking
+
+"Imajev-4B leads the Jev-class systems with 66.3" (Capability: intelligence and calibration, among systems within 2× Jev's cost and latency).
 
 <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench Capability ranking of Jev-class systems, screenshot: 1 Imajev-4B 66.3, 2 Jev 1.13.0 64.7, 3 Plumb-4B 64.2" src="docs/assets/proof/proof-jevbench-capability.png"></a>
 
-**#3 of 56 models on DecisionBench (eng, v1)**, 79.65: ahead of GLM-5.3 Flash (320B), Jev 1.13, DeepSeek V4.1 Flash (552B) and GPT-5.6 Luna. The two above are the benchmark team's own Bosun models.
+### #3 of 56 models on DecisionBench (eng, v1)
+
+79.65, ahead of GLM-5.3 Flash (320B), Jev 1.13, DeepSeek V4.1 Flash (552B) and GPT-5.6 Luna. The two above are the benchmark team's own Bosun models.
 
 <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench (eng, v1) leaderboard, screenshot: 1 bosun-v3.1-1.7b 87.29, 2 bosun-v3.1-0.6b 83.20, 3 imajev-4b 79.65, 7 glm-5.3-flash 73.41, 8 jev-1.13 71.90, 9 deepseek-v4.1-flash 70.68, 12 gpt-5.6-luna 69.04" src="docs/assets/proof/proof-decisionbench.png"></a>
 
-**#3 on DecisionBench Reasoning**, 80.58: behind GLM-5.3 Flash and GPT-5.6 Luna, ahead of DeepSeek V4.1 Flash (552B) and Jev 1.13.
+### #3 on DecisionBench Reasoning
+
+80.58, behind GLM-5.3 Flash and GPT-5.6 Luna, ahead of DeepSeek V4.1 Flash (552B) and Jev 1.13.
 
 <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench (Reasoning, eng, v1) leaderboard, screenshot: 1 glm-5.3-flash 86.92, 2 gpt-5.6-luna 86.17, 3 imajev-4b 80.58, 4 deepseek-v4.1-flash 76.92, 6 jev-1.13 74.50" src="docs/assets/proof/proof-decisionbench-reasoning.png"></a>
 
 <sub>Boards move as new systems are added; ranks are quoted with the board version and the date. Archived copies and the raw data are linked in <a href="#official-leaderboards">Official leaderboards</a>.</sub>
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/request-listing-dark.png"><img alt="imajev-4b checks a listing against its photo: listing.color says red, the photo shows beige shoes; the model names listing.color as contradicted at 0.999 and the app holds the listing" src="docs/assets/readme/request-listing-light.png"></picture></p>
 
 ## Try it live
 

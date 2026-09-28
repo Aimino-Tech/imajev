@@ -271,6 +271,15 @@ details{margin-top:18px} summary{cursor:pointer; font:.8rem var(--mono); color:v
 .note{font-size:.9rem; color:var(--ink2); max-width:46rem}
 
 /* bench */
+.ranks{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--rule)}
+.ranks a{display:grid; gap:2px; padding:16px 16px 16px 0; color:var(--ink2); text-decoration:none; min-width:0}
+.ranks a + a{padding-left:18px; border-left:1px solid var(--rule)}
+.ranks b{font:600 clamp(2.6rem,5.2vw,3.6rem)/1 var(--serif, 'Source Serif 4', Georgia, serif); color:var(--ink); letter-spacing:-.02em}
+.ranks b small{font-size:.42em; font-weight:500; color:var(--ink2); letter-spacing:0}
+.ranks .bd{font:600 .95rem/1.3 var(--sans); color:var(--ink); margin-top:8px}
+.ranks .w{font:400 .74rem/1.4 var(--mono); color:var(--muted)}
+.ranks .n{font-size:.84rem; line-height:1.4}
+.ranks a:hover b{text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:6px}
 .rank{font:500 .92rem/1.5 var(--sans); color:var(--ink2)} .rank a{color:var(--ink); text-decoration:none; border-bottom:1px solid var(--rule)} .rank b{font-weight:600}
 .board{display:grid; gap:14px; margin-bottom:48px} .board ol{list-style:none; margin:0; padding:0; display:grid; gap:8px}
 .board li{display:grid; grid-template-columns:1.6rem minmax(9rem,15rem) minmax(0,1fr) 3.4rem; gap:12px; align-items:center; font-size:.92rem; color:var(--ink2)}
@@ -338,6 +347,10 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
   <div class="hero">
     <div class="copy">
       <span class="label">imajev 1.0 · open models for everyday business decisions</span>
+      <div class="ranks">
+        <a href="https://benchmarkheaven.com/jev-models"><b>#1<small> of 91</small></b><span class="bd">JevBench v1.4.2.2</span><span class="w">official board · scored 27 Sep 2026</span><span class="n">ahead of Jev 1.13.0 and 89 other systems</span></a>
+        <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><b>#3<small> of 56</small></b><span class="bd">DecisionBench (eng, v1)</span><span class="w">official leaderboard · 28 Sep 2026</span><span class="n">ahead of GPT-5.6 Luna and DeepSeek V4.1 (552B)</span></a>
+      </div>
       <h1>Decisions for real-world cases.</h1>
       <p class="lead">Your teams make the same judgements thousands of times a day: does this listing match its photo, is this the item we shipped, who owns this ticket, does this refund meet the policy. imajev reads the photos, records and text you already have and answers in the options you set, with a probability on each and an explicit <i>can't tell</i>. Your system acts when it is sure and hands the rest to a person.</p>
       <div class="cta">
@@ -345,7 +358,6 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
         <a class="btn" href="#uses">See where it fits</a>
         <a class="btn" href="#developers">Run it yourself</a>
       </div>
-      <p class="rank"><a href="https://benchmarkheaven.com/jev-models"><b>#1 of 91 on JevBench v1.4.2.2</b></a>, the official board for Jev-class decision models (scored 27 Sep 2026), ahead of Jev 1.13.0. <a href="#benchmarks">See the board</a></p>
       <p class="facts"><span>Runs on your own hardware</span><span>Your data never leaves</span><span>Open weights, Apache-2.0</span><span>2B · 4B · 9B</span></p>
     </div>
     <div class="hero-demo">
