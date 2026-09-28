@@ -444,7 +444,8 @@ def create_app(backend, examples=None, static=STATIC, calibration=None, thinking
             log.exception("scoring failed")
             raise PlaygroundError(500, type(exc).__name__, str(exc))
         if calibration is not None:
-            results = [calibration.calibrate_result(result, field.type, len(result.scores) - 1, image=bool(images))
+            photo_only = bool(images) and not request.state   # images with no record: schema-1.2 files carry their own temperature
+            results = [calibration.calibrate_result(result, field.type, len(result.scores) - 1, image=bool(images), photo_only=photo_only)
                        for field, result in zip(request.fields, results)]
         body = to_response(request, results, model=backend.model, plan=plan)
         total_ms = round((perf_counter() - started) * 1000, 1)

@@ -118,3 +118,37 @@ def test_unknown_offset_recovers_typed_values():
                     raw_logits={"1": 0.0, "2": 0.0, "3": 0.5, UNKNOWN: 0.6})
     out = cal.calibrate_result(engine, "ordinal", 3)
     assert out.value == 3 and isinstance(out.value, int)
+
+
+def test_schema_1_2_photo_only_temperature_applies_only_to_photo_only_requests():
+    from vision_decision.calibration import TemperatureCalibrator
+    artifact = {"schema_version": "1.2", "calibration_version": "test-1.2",
+                "temperatures": {"choice:3-5": 1.3}, "counts": {"choice:3-5": 10},
+                "photo_only_temperatures": {"choice:3-5": 1.0}, "photo_only_counts": {"choice:3-5": 5}}
+    cal = TemperatureCalibrator.from_dict(artifact)
+    assert cal.temperature("choice", 4) == 1.3
+    assert cal.temperature("choice", 4, photo_only=True) == 1.0
+    logits = {"a": 2.0, "b": 0.0, "c": 0.0, "d": 0.0, "__unknown__": -1.0}
+    base, _ = cal.calibrate_scores(logits, "choice", 4, image=True)
+    photo, _ = cal.calibrate_scores(logits, "choice", 4, image=True, photo_only=True)
+    text, _ = cal.calibrate_scores(logits, "choice", 4, image=False, photo_only=True)   # no image: never photo-only
+    assert photo["a"] > base["a"] and text == base
+    assert max(photo, key=photo.get) == max(base, key=base.get) == "a"
+    assert cal.to_dict()["schema_version"] == "1.2" and cal.to_dict()["photo_only_temperatures"] == {"choice:3-5": 1.0}
+
+
+def test_schema_1_2_requires_matching_photo_only_buckets():
+    import pytest
+    from vision_decision.calibration import TemperatureCalibrator
+    with pytest.raises(ValueError):
+        TemperatureCalibrator.from_dict({"schema_version": "1.2", "calibration_version": "x", "temperatures": {"choice:2": 1.2},
+                                         "counts": {"choice:2": 3}, "photo_only_temperatures": {"boolean:2": 1.0}, "photo_only_counts": {"boolean:2": 3}})
+    with pytest.raises(ValueError):
+        TemperatureCalibrator.from_dict({"schema_version": "1.2", "calibration_version": "x", "temperatures": {"choice:2": 1.2},
+                                         "counts": {"choice:2": 3}, "photo_only_temperatures": {"choice:2": 1.0}})
+
+
+def test_schema_1_0_files_ignore_the_photo_only_flag():
+    from vision_decision.calibration import TemperatureCalibrator
+    cal = TemperatureCalibrator.from_dict({"schema_version": "1.0", "calibration_version": "x", "temperatures": {"choice:2": 1.2}, "counts": {"choice:2": 3}})
+    assert cal.temperature("choice", 2, photo_only=True) == 1.2

@@ -4,6 +4,7 @@ The server runs the same weights the decision is read with (the merged imajev-4b
 built exactly as TorchDecision.render_thinking builds them (images first, then the prompt; enable_thinking), so vLLM renders the
 same chat template; images go as lossless PNG of the already-decoded image, so the pixels are the ones the decision sees.
 Generation is greedy and stops at '</think>'. The thought comes back as text and is re-tokenized with the same tokenizer.
+Optional logit_bias (token id -> bias) shifts chosen tokens during the thought, e.g. a penalty on hedge words ("wait", "maybe").
 
     engine = VLLMThoughts("http://127.0.0.1:8000", "imajev-4b", tokenizer)
     tokens, closed, prompt_tokens = engine.think(images, prompt, max_tokens=256)
@@ -30,13 +31,16 @@ class VLLMThoughts:
             raise ValueError("'</think>' is not a single token")
         self.think_end = ids[0]
 
-    def think(self, images, prompt, max_tokens):
-        """-> (thought token ids without '</think>', closed by the model?, prompt tokens as vLLM counted them)."""
+    def think(self, images, prompt, max_tokens, logit_bias=None):
+        """-> (thought token ids without '</think>', closed by the model?, prompt tokens as vLLM counted them).
+        logit_bias: {token id: bias} added to those tokens' logits at every thought step (e.g. -2 on hedge words)."""
         images = [] if images is None else images if isinstance(images, list) else [images]
         content = [{"type": "image_url", "image_url": {"url": png_data_url(image)}} for image in images] + [{"type": "text", "text": prompt}]
         body = {"model": self.model, "messages": [{"role": "user", "content": content}], "max_tokens": int(max_tokens),
                 "temperature": 0.0, "chat_template_kwargs": {"enable_thinking": True}, "stop_token_ids": [self.think_end],
                 "skip_special_tokens": False}
+        if logit_bias:
+            body["logit_bias"] = {str(k): float(v) for k, v in logit_bias.items()}
         request = urllib.request.Request(self.url + "/v1/chat/completions", data=json.dumps(body).encode(),
                                          headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(request, timeout=self.timeout) as response:
@@ -48,3 +52,21 @@ class VLLMThoughts:
         text = text.split("</think>")[0]
         closed = choice.get("finish_reason") == "stop"
         return self.tok.encode(text, add_special_tokens=False), closed, payload.get("usage", {}).get("prompt_tokens")
+
+
+HEDGE_WORDS = {  # fixed before any run (docs/think-if-unsure-plan.md, follow-up)
+    "thread": ["wait", "maybe", "perhaps"],  # r/LocalLLaMA recipe on Qwen3.5-4B, bias -2
+    "paper": ["wait", "but", "alternatively", "perhaps", "maybe", "however", "reconsider", "backtrack", "wrong"],  # arXiv 2606.00206 examples
+}
+
+
+def hedge_bias(tokenizer, words, bias=-2.0):
+    """{token id: bias} for every single-token spelling of `words`: lower / Capitalised / UPPER, with and without a leading space."""
+    ids = {}
+    for word in words:
+        for form in {word.lower(), word.capitalize(), word.upper()}:
+            for text in (form, " " + form):
+                enc = tokenizer.encode(text, add_special_tokens=False)
+                if len(enc) == 1:
+                    ids[enc[0]] = bias
+    return ids

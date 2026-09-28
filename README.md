@@ -506,9 +506,10 @@ harness in `src/imajev_bench`, leaderboard in `bench/LEADERBOARD.md`. Run your m
 
 - **Single pass, no reasoning at inference.** JevBench hard trails reasoning models; on the public hard split JevK5 and Eikos-4B are ahead of every size, and on the official board the 4B is #3 on Intelligence alone.
 - **Over-confident without calibration.** Raw hard-item ECE is 0.16–0.19 (0.09–0.12 as shipped); serve with `--calibration` and `--rotations 4`.
-- **Photo-only caveat.** On photo-only verification (ABO + VizWiz) the raw probabilities are already calibrated and a single
-  temperature over-softens them (previous adapters and temperatures: 4B 0.038 → 0.062, 9B 0.027 → 0.053; not re-measured). For mostly photo-against-record traffic, serve without
-  `--calibration` or fit your own temperature.
+- **Photo-only requests need their own temperature.** On photo-only verification (ABO + VizWiz, 823 items) the 4B's raw probabilities are
+  already calibrated (ECE 0.015) and the shared temperature over-softens them (0.029). The schema-1.2 files `calibration-modality.json` /
+  `calibration-rot4-modality.json` add a photo-only bucket (1.028) that the server applies when a request has images and an empty state
+  (0.012); every other number is unchanged. The 2B and 9B still ship the single temperature. Fit report: `results/calibration-modality/`.
 - **The last part of the hard-question stage cost some reasoning-dev accuracy** on our reasoning dev set (also used for checkpoint selection): 2B −5.6, 4B −1.2, 9B −1.8 points; the stage-4 checkpoints recovered most of it (62.7 / 67.2 / 68.9%), and the shipped averages were not measured on it.
 - **Our pre-registered test against the untuned base model is not significant for the 9B** (+5.4 points over its untuned base, p = 0.131, on the shipped adapter; +6.1, p = 0.074 on the previous one), and the 4B and 9B are statistically indistinguishable on ImajevBench.
 - **The 2B abstains too rarely on ImajevBench's Unknown items** (5/21, vs 18/21 and 15/21 for the 4B and 9B). The ImajevBench test split was

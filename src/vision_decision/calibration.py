@@ -137,6 +137,10 @@ class TemperatureCalibrator:
     temperatures: Mapping[str, float]
     counts: Mapping[str, int]
     unknown_offsets: Mapping[str, float] | None = None
+    # schema 1.2: separate temperatures for photo-only requests (images present, empty state), fitted on
+    # photo-only verification rows; requests that carry a record keep the base temperatures.
+    photo_only_temperatures: Mapping[str, float] | None = None
+    photo_only_counts: Mapping[str, int] | None = None
 
     def __post_init__(self) -> None:
         if not self.version or not isinstance(self.version, str):
@@ -156,6 +160,17 @@ class TemperatureCalibrator:
             if (isinstance(self.counts[key], bool) or not isinstance(self.counts[key], int)
                     or self.counts[key] < 1):
                 raise ValueError("Calibration bucket counts must be positive integers")
+        if (self.photo_only_temperatures is None) != (self.photo_only_counts is None):
+            raise ValueError("Photo-only temperatures and counts must be supplied together")
+        if self.photo_only_temperatures is not None:
+            if set(self.photo_only_temperatures) - set(self.temperatures) or set(self.photo_only_counts) != set(self.photo_only_temperatures):
+                raise ValueError("Photo-only buckets must name temperature buckets and match their counts")
+            for key, value in self.photo_only_temperatures.items():
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                    raise ValueError("Invalid photo-only temperature artifact")
+                count = self.photo_only_counts[key]
+                if isinstance(count, bool) or not isinstance(count, int) or count < 1:
+                    raise ValueError("Photo-only bucket counts must be positive integers")
 
     @classmethod
     def fit(cls, rows: Iterable[Mapping[str, Any]], *, version: str | None = None,
@@ -189,26 +204,35 @@ class TemperatureCalibrator:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "TemperatureCalibrator":
-        if value.get("schema_version") not in ("1.0", "1.1"):
+        if value.get("schema_version") not in ("1.0", "1.1", "1.2"):
             raise ValueError("Unsupported calibration artifact schema")
         offsets = value.get("unknown_offsets")
+        photo = value.get("photo_only_temperatures"); photo_counts = value.get("photo_only_counts")
         return cls(str(value["calibration_version"]), dict(value["temperatures"]), dict(value["counts"]),
-                   None if offsets is None else dict(offsets))
+                   None if offsets is None else dict(offsets),
+                   None if photo is None else dict(photo), None if photo_counts is None else dict(photo_counts))
 
     @classmethod
     def load(cls, path: str | Path) -> "TemperatureCalibrator":
         return cls.from_dict(json.loads(Path(path).read_text()))
 
     def to_dict(self) -> dict[str, Any]:
-        payload = {"schema_version": "1.1" if self.unknown_offsets is not None else "1.0",
-                   "calibration_version": self.version,
+        schema = "1.2" if self.photo_only_temperatures is not None else ("1.1" if self.unknown_offsets is not None else "1.0")
+        payload = {"schema_version": schema, "calibration_version": self.version,
                    "temperatures": dict(self.temperatures), "counts": dict(self.counts)}
         if self.unknown_offsets is not None:
             payload["unknown_offsets"] = dict(self.unknown_offsets)
+        if self.photo_only_temperatures is not None:
+            payload["photo_only_temperatures"] = dict(self.photo_only_temperatures)
+            payload["photo_only_counts"] = dict(self.photo_only_counts)
         return payload
 
-    def temperature(self, decision_type: str, option_count: int) -> float | None:
-        return self.temperatures.get(calibration_key(decision_type, option_count, EXTENDED_MAX_OPTIONS))
+    def temperature(self, decision_type: str, option_count: int, *, photo_only: bool = False) -> float | None:
+        """Bucket temperature; a photo-only request (images, empty state) uses its own bucket when the artifact has one."""
+        key = calibration_key(decision_type, option_count, EXTENDED_MAX_OPTIONS)
+        if photo_only and self.photo_only_temperatures is not None and key in self.photo_only_temperatures:
+            return self.photo_only_temperatures[key]
+        return self.temperatures.get(key)
 
     def unknown_offset(self, decision_type: str, option_count: int, *, image: bool = False) -> float:
         """Offset on the unknown logit for text-only requests; zero for requests with images or unseen buckets."""
@@ -217,26 +241,27 @@ class TemperatureCalibrator:
         return float(self.unknown_offsets.get(calibration_key(decision_type, option_count, EXTENDED_MAX_OPTIONS), 0.0))
 
     def calibrate_scores(self, raw_logits: Mapping[str, float], decision_type: str,
-                         option_count: int, *, image: bool = False) -> tuple[dict[str, float], str | None]:
+                         option_count: int, *, image: bool = False, photo_only: bool = False) -> tuple[dict[str, float], str | None]:
         """Return identity softmax/None for an unseen bucket, including unknown safely."""
         if UNKNOWN not in raw_logits:
             raise ValueError(f"Raw logits must include {UNKNOWN}")
         if len(raw_logits) != option_count + 1:
             raise ValueError("option_count must equal len(raw_logits) - 1 for unknown")
-        temperature = self.temperature(decision_type, option_count)
+        temperature = self.temperature(decision_type, option_count, photo_only=photo_only and image)
         offset = self.unknown_offset(decision_type, option_count, image=image)
         keys = list(raw_logits)
         values = [raw_logits[key] + (offset if key == UNKNOWN else 0.0) for key in keys]
         probabilities = softmax(values, temperature or 1.0)
         return dict(zip(keys, probabilities)), self.version if temperature is not None else None
 
-    def calibrate_result(self, result: Result, decision_type: str, option_count: int, *, image: bool = False) -> Result:
+    def calibrate_result(self, result: Result, decision_type: str, option_count: int, *, image: bool = False,
+                         photo_only: bool = False) -> Result:
         """Rebuild a Result from calibrated logits; unknown participates like every other class.
 
         With a non-zero unknown offset (text-only requests) the argmax can move, so the value is re-derived
         from the calibrated scores; otherwise the engine's selected value (with its tie break) is kept.
         """
-        scores, version = self.calibrate_scores(result.raw_logits, decision_type, option_count, image=image)
+        scores, version = self.calibrate_scores(result.raw_logits, decision_type, option_count, image=image, photo_only=photo_only)
         status, value, reason = result.status, result.value, result.reason
         if self.unknown_offset(decision_type, option_count, image=image):
             current = UNKNOWN if value is None else _score_key(value)
