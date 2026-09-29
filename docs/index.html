@@ -281,7 +281,7 @@ details{margin-top:18px} summary{cursor:pointer; font:.8rem var(--mono); color:v
 .note{font-size:.9rem; color:var(--ink2); max-width:46rem}
 
 /* bench */
-.ranks{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--rule)}
+.ranks{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; border-top:1px solid var(--ink); border-bottom:1px solid var(--rule)}
 .ranks a{display:grid; gap:2px; padding:16px 16px 16px 0; color:var(--ink2); text-decoration:none; min-width:0}
 .ranks a + a{padding-left:16px; border-left:1px solid var(--rule)}
 @media (max-width:640px){ .ranks{grid-template-columns:minmax(0,1fr)} .ranks a{padding:12px 0} .ranks a + a{padding-left:0; border-left:0; border-top:1px solid var(--rule)} }
@@ -361,9 +361,8 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
     <div class="copy">
       <span class="label">imajev 1.0 · open models for everyday business decisions</span>
       <div class="ranks">
-        <a href="https://benchmarkheaven.com/jev-models"><b>#1<small> of 91</small></b><span class="bd">JevBench v1.4.2.2</span><span class="w">text · scored 27 Sep 2026</span><span class="n">ahead of Jev 1.13.0</span></a>
-        <a href="https://benchmarkheaven.com/image-jev-bench"><b>#1<small> of 49</small></b><span class="bd">Image JevBench v0.1.3</span><span class="w">images · released 28 Sep 2026</span><span class="n">ahead of Jev-Omni (12B)</span></a>
-        <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><b>#3<small> of 56</small></b><span class="bd">DecisionBench (eng, v1)</span><span class="w">leaderboard · 28 Sep 2026</span><span class="n">ahead of GPT-5.6 Luna</span></a>
+        <a href="https://benchmarkheaven.com/image-jev-bench"><b>#1<small> of 50</small></b><span class="bd">Image JevBench v0.1.4</span><span class="w">images · released 29 Sep 2026</span><span class="n">ahead of Wity-1 (API) and Jev-Omni (12B)</span></a>
+        <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><b>#3<small> of 56</small></b><span class="bd">DecisionBench (eng, v1)</span><span class="w">leaderboard · 28 Sep 2026</span><span class="n">ahead of GPT-5.6 Luna and DeepSeek V4.1</span></a>
       </div>
       <h1>Decisions for real-world cases.</h1>
       <p class="lead">Your teams make the same judgements thousands of times a day: does this listing match its photo, is this the item we shipped, who owns this ticket, does this refund meet the policy. imajev reads the photos, records and text you already have and answers in the options you set, with a probability on each and an explicit <i>can't tell</i>. Your system acts when it is sure and hands the rest to a person.</p>
@@ -387,18 +386,16 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
 
 <section class="s" id="proof"><div class="wrap">
   <div class="s-head"><h2>Independent results</h2>
-    <p>Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is run by its own maintainer, not by us.</p></div>
+    <p>Screenshots of the official leaderboards, captured 28 and 29 Sep 2026. Each board is run by its own maintainer, not by us.</p></div>
   <div class="proof">
-    <figure class="wide"><a href="https://benchmarkheaven.com/jev-models"><img src="assets/proof/proof-jevbench-score.png" alt="JevBench v1.4.2.2 Composite Score: 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 3 decider-4b v2 64.1, 4 Jev 1.13.0 63.3" loading="lazy"></a>
-      <figcaption><b>#1 of 91 on JevBench v1.4.2.2</b> (scored 27 Sep 2026). imajev-4b 67.37, ahead of Plumb-4B and TypeSafe's own Jev 1.13.0.</figcaption></figure>
-    <figure class="wide"><a href="https://benchmarkheaven.com/image-jev-bench"><img src="assets/proof/proof-image-jevbench.png" alt="Image JevBench v0.1.3 composite score: 1 Imajev-4B 76.39, 2 Jev-Omni 73.10, 3 NeoHorse Jev 4B 71.94, 6 imajev 2B 68.72" loading="lazy"></a>
-      <figcaption><b>#1 of 49 on Image JevBench v0.1.3</b> (released 28 Sep 2026). imajev-4b 76.39, ahead of Jev-Omni (12B) and NeoHorse Jev 4B. Sealed accuracy 83.3%, second of 44 self-hosted systems.</figcaption></figure>
+    <figure class="wide"><a href="https://benchmarkheaven.com/image-jev-bench"><img src="assets/proof/proof-image-jevbench-v014.png" alt="Image JevBench v0.1.4 composite score: 1 Imajev-4B 76.39, 2 Wity-1 (API) 74.36, 3 Jev-Omni 73.10, 4 NeoHorse Jev 4B 71.94, 7 imajev 2B 68.72" loading="lazy"></a>
+      <figcaption><b>#1 of 50 on Image JevBench v0.1.4</b> (released 29 Sep 2026). imajev-4b 76.39, ahead of Wity-1 (a hosted API) and Jev-Omni (12B). Sealed accuracy 83.3%.</figcaption></figure>
     <figure class="wide"><a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img src="assets/proof/proof-decisionbench.png" alt="DecisionBench (eng, v1): 3 imajev-4b 79.65, ahead of glm-5.3-flash, jev-1.13, deepseek-v4.1-flash and gpt-5.6-luna" loading="lazy"></a>
       <figcaption><b>#3 of 56 models on DecisionBench</b>, 79.65: ahead of GLM-5.3 Flash (320B), Jev 1.13, DeepSeek V4.1 Flash (552B) and GPT-5.6 Luna. The two above are the benchmark team's own models.</figcaption></figure>
-    <figure><a href="https://benchmarkheaven.com/jev-models"><img src="assets/proof/proof-jevbench-capability.png" alt="JevBench Capability ranking: Imajev-4B leads the Jev-class systems with 66.3" loading="lazy"></a>
-      <figcaption><b>#1 on the board's headline ranking.</b> "Imajev-4B leads the Jev-class systems with 66.3."</figcaption></figure>
     <figure><a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img src="assets/proof/proof-decisionbench-reasoning.png" alt="DecisionBench Reasoning: 3 imajev-4b 80.58, behind glm-5.3-flash and gpt-5.6-luna" loading="lazy"></a>
       <figcaption><b>#3 on DecisionBench Reasoning</b>, 80.58: behind GLM-5.3 Flash and GPT-5.6 Luna, ahead of DeepSeek V4.1 Flash and Jev 1.13.</figcaption></figure>
+    <figure><a href="https://benchmarkheaven.com/jev-models"><img src="assets/proof/proof-jevbench-score.png" alt="JevBench v1.4.2.2 (previous release): 1 Imajev-4B 67.4, 2 Plumb-4B 65.8, 4 Jev 1.13.0 63.3" loading="lazy"></a>
+      <figcaption><b>JevBench (text)</b>: #1 of 91 on v1.4.2.2 (scored 27 Sep 2026, shown). On the revamped v1.5.1 (29 Sep) it is #9 of 98, where most neighbouring ranks are statistical ties.</figcaption></figure>
   </div>
 </div></section>
 
@@ -506,20 +503,20 @@ footer h3{font:600 .88rem var(--sans); color:var(--ink); margin-bottom:6px}
 
 <section class="s" id="benchmarks"><div class="wrap">
   <div class="s-head"><h2>Where it stands</h2>
-    <p>On the official JevBench board, run by its maintainer, imajev-4b is #1 of 91 on the JevBench Score, which weighs intelligence, calibration, speed and cost equally. It is not the most accurate model on every test: on intelligence alone it is #3, and reasoning models score far higher at seconds per decision. It is the small one that runs on your own hardware, reads photos and can abstain.</p></div>
+    <p>On the official Image JevBench board, run by its maintainer, imajev-4b is #1 of 50: the score weighs intelligence, calibration, speed and cost equally, over 684 decisions made from photos, screenshots and documents. On the text board, JevBench, it was #1 of 91 on v1.4.2.2 (27 Sep 2026) and is #9 of 98 on the revamped v1.5.1 (29 Sep), where most neighbouring ranks are statistical ties. Frontier APIs and reasoning models are more accurate on the hardest items, at seconds per decision. imajev is the small one that runs on your own hardware, reads photos and can abstain.</p></div>
   <div class="board">
-    <span class="label">JevBench v1.4.2.2 · official · scored 27 Sep 2026 · top 8 of 91</span>
-    <ol aria-label="JevBench v1.4.2.2 JevBench Score, top 8">
-      <li class="us"><span class="n">1</span><span class="name">Imajev-4B</span><span class="bar"><i style="width:84.2%"></i></span><span class="v">67.37</span></li>
-      <li><span class="n">2</span><span class="name">Plumb-4B</span><span class="bar"><i style="width:82.3%"></i></span><span class="v">65.84</span></li>
-      <li><span class="n">3</span><span class="name">decider-4b v2</span><span class="bar"><i style="width:80.2%"></i></span><span class="v">64.13</span></li>
-      <li><span class="n">4</span><span class="name">Jev 1.13.0 (closed original)</span><span class="bar"><i style="width:79.1%"></i></span><span class="v">63.29</span></li>
-      <li><span class="n">5</span><span class="name">JevK5 v0.2.0</span><span class="bar"><i style="width:77.5%"></i></span><span class="v">62.04</span></li>
-      <li><span class="n">6</span><span class="name">Cygnet</span><span class="bar"><i style="width:77.2%"></i></span><span class="v">61.76</span></li>
-      <li><span class="n">7</span><span class="name">Hopper</span><span class="bar"><i style="width:74.3%"></i></span><span class="v">59.43</span></li>
-      <li><span class="n">8</span><span class="name">Winnow-12B Q8</span><span class="bar"><i style="width:69.5%"></i></span><span class="v">55.58</span></li>
+    <span class="label">Image JevBench v0.1.4 · official · released 29 Sep 2026 · top 8 of 50</span>
+    <ol aria-label="Image JevBench v0.1.4 composite score, top 8">
+      <li class="us"><span class="n">1</span><span class="name">Imajev-4B</span><span class="bar"><i style="width:76.39%"></i></span><span class="v">76.39</span></li>
+      <li><span class="n">2</span><span class="name">Wity-1 (hosted API)</span><span class="bar"><i style="width:74.36%"></i></span><span class="v">74.36</span></li>
+      <li><span class="n">3</span><span class="name">Jev-Omni (12B)</span><span class="bar"><i style="width:73.10%"></i></span><span class="v">73.10</span></li>
+      <li><span class="n">4</span><span class="name">NeoHorse Jev 4B</span><span class="bar"><i style="width:71.94%"></i></span><span class="v">71.94</span></li>
+      <li><span class="n">5</span><span class="name">Visual-Jev 4B Answer-SFT</span><span class="bar"><i style="width:69.81%"></i></span><span class="v">69.81</span></li>
+      <li><span class="n">6</span><span class="name">JPT-4B</span><span class="bar"><i style="width:69.55%"></i></span><span class="v">69.55</span></li>
+      <li><span class="n">7</span><span class="name">imajev-2b</span><span class="bar"><i style="width:68.72%"></i></span><span class="v">68.72</span></li>
+      <li><span class="n">8</span><span class="name">Glance (frozen Qwen3-VL-4B)</span><span class="bar"><i style="width:66.86%"></i></span><span class="v">66.86</span></li>
     </ol>
-    <p class="foot">JevBench Score: equal-weight harmonic mean of Intelligence, Calibration, Speed and Cost (0 to 100). imajev-4b: Intelligence 52.2, Calibration 80.4 (best of the top 8), Speed 90.6, Cost 59.7; also #1 on the board's Capability ranking of Jev-class systems (66.3 vs Jev 1.13.0 at 64.7). Served with one option order and its calibration file. Source: <a href="https://benchmarkheaven.com/jev-models">benchmarkheaven.com/jev-models</a> · <a href="https://github.com/fstandhartinger/jevbench/tree/main/results/v1.4.2.2">data</a>. On <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard">DecisionBench</a> the 4B is #3 of 56 models (79.65), behind two models built by that benchmark's team. On <a href="https://benchmarkheaven.com/image-jev-bench">Image JevBench v0.1.3</a> (released 28 Sep 2026) the 4B is #1 of 49 (76.39, ahead of Jev-Omni at 73.10), measured on the fast server; the 2B is #6.</p>
+    <p class="foot">Composite: equal-weight harmonic mean of Intelligence, Calibration, Speed and Cost (0 to 100). imajev-4b: Intelligence 73.8, Calibration 90.5, Speed 87.6, Cost 61.2; sealed accuracy 83.3%; about $0.02 per 1,000 decisions and 0.1 s per decision on the board's clock. Served with <code>--fast --merge-lora</code>, one option order and its calibration file. Source: <a href="https://benchmarkheaven.com/image-jev-bench">benchmarkheaven.com/image-jev-bench</a> · <a href="https://github.com/fstandhartinger/model-market-comparison/blob/main/data/raw/benchmarks/jevbench/multimodal-preview/preview.json">data</a>. On <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard">DecisionBench</a> the 4B is #3 of 56 models (79.65), behind two models built by that benchmark's team.</p>
   </div>
   <div class="bench">
     <figure><div id="c-ib"></div><figcaption><b>ImajevBench v2.0-lite</b>, 279 test items: photos, records and text, including 21 items whose right answer is unknown. Dot is accuracy, line the 95% cluster interval. Frontier APIs answer by structured generation, a different interface taking 5 to 8 s per item; starred ones also screened the benchmark's images. 51 contrast sets pair a scene with an edited copy whose right answer must change, become unknown, or stay; the 4B gets all of a set right in 36 of 51 (9B 35, 2B 25).</figcaption></figure>

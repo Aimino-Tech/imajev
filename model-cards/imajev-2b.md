@@ -2,7 +2,7 @@
 
 The full model card lives on Hugging Face: https://huggingface.co/mohit67890/imajev-2b
 
-The family's imajev-4b is #1 of 91 on JevBench v1.4.2.2 (official board, scored 27 Sep 2026; https://benchmarkheaven.com/jev-models). This 2B has no official text-board entry.
+The family's imajev-4b is #1 of 50 on Image JevBench v0.1.4 (official board, released 29 Sep 2026; https://benchmarkheaven.com/image-jev-bench). This 2B has no official text-board entry.
 
 Summary: Qwen3.5-2B + LoRA (r16/α32, language layers) + 255-code decision readout; the latency tier (p50 83 ms raw, 238 ms as shipped with four option orders, per decision on
 one H100 under load). ImajevBench v2.0-lite test 71.7%, JevBench public hard 60.4% (our runs, as shipped). Trained on image, text, image+state and
