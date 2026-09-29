@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>imajev case study</title>
+<meta name="description" content="Case study by Mohit Garg: small open models that make high-volume business decisions from photos, records and text, act when sure and hand the rest to a person. imajev-4b is #1 of 91 on JevBench v1.4.2.2 (scored 27 Sep 2026).">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://mohit67890.github.io/imajev/case-study/">
+<meta property="og:title" content="Decisions for real-world cases: an open 4B model, #1 on JevBench for text and images">
+<meta property="og:description" content="A decision system for high-volume checks (listings, returns, QC, tickets) that acts when sure and routes the rest to a person. #1 of 91 on JevBench v1.4.2.2 (27 Sep 2026) and #1 of 49 on Image JevBench v0.1.3 (28 Sep 2026). Case study by Mohit Garg.">
+<meta property="og:image" content="https://mohit67890.github.io/imajev/case-study/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root{
+  --paper:#FFFFFF; --wash:#F5F5F2; --ink:#111111; --ink2:#3B3B39; --muted:#6B6B67; --rule:#E2E2DD; --track:#ECECE8; --other:#8F8F8A;
+  --serif:"Source Serif 4","Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --page:70rem; --measure:40rem;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ color-scheme:dark;
+  --paper:#111213; --wash:#18191A; --ink:#EDEDEA; --ink2:#C4C4BF; --muted:#8E8E89; --rule:#2A2A28; --track:#222321; --other:#6A6A66; } }
+:root[data-theme="dark"]{ color-scheme:dark;
+  --paper:#111213; --wash:#18191A; --ink:#EDEDEA; --ink2:#C4C4BF; --muted:#8E8E89; --rule:#2A2A28; --track:#222321; --other:#6A6A66; }
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper); color:var(--ink); font:16.5px/1.6 var(--sans); margin:0; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+.wrap{max-width:var(--page); margin:0 auto; padding-inline:clamp(16px,4vw,40px)}
+a{color:var(--ink); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; text-decoration-color:var(--muted)}
+a:hover{text-decoration-color:var(--ink)}
+:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+p,h1,h2,h3,figure,ul,ol,dl{margin:0}
+h1,h2{font-family:var(--serif); font-weight:600; letter-spacing:-0.015em; text-wrap:balance}
+h1{font-size:clamp(2.1rem,4.6vw,3.4rem); line-height:1.06; font-variation-settings:"opsz" 60}
+h2{font-size:clamp(1.6rem,3vw,2.1rem); line-height:1.12; font-variation-settings:"opsz" 48}
+h3{font:600 1.02rem/1.35 var(--sans)}
+code{font:.86em var(--mono); background:var(--wash); padding:.08em .32em; border-radius:3px}
+.label{font:500 .7rem/1.3 var(--mono); letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.muted{color:var(--muted)}
+.btn{display:inline-flex; align-items:center; gap:8px; font:500 .92rem/1 var(--sans); padding:12px 16px; border:1px solid var(--ink); color:var(--ink); text-decoration:none; border-radius:4px; background:var(--paper)}
+.btn.solid{background:var(--ink); color:var(--paper)}
+.btn:hover{background:var(--wash)} .btn.solid:hover{background:var(--ink2)}
+.src{font:.74rem/1.5 var(--mono); color:var(--muted)}
+.src a{color:var(--muted)} .src a:hover{color:var(--ink)}
+.l-img{display:block} .d-img{display:none}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .l-img{display:none} :root:not([data-theme="light"]) .d-img{display:block} }
+:root[data-theme="dark"] .l-img{display:none} :root[data-theme="dark"] .d-img{display:block}
+
+/* top bar */
+header.top{border-bottom:1px solid var(--rule)}
+header.top .wrap{display:flex; align-items:center; gap:14px 20px; padding-block:14px; flex-wrap:wrap}
+.word{display:flex; align-items:center; gap:9px; font:500 1.05rem/1 var(--mono); color:var(--ink); text-decoration:none}
+.word img{width:22px; height:22px}
+.word .who{font:400 .8rem/1 var(--mono); color:var(--muted); margin-left:4px}
+header.top nav{margin-left:auto; display:flex; gap:18px; flex-wrap:wrap; font-size:.9rem}
+header.top nav a{text-decoration:none; color:var(--ink2)} header.top nav a:hover{color:var(--ink); text-decoration:underline}
+
+/* hero */
+.hero{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:clamp(32px,6vw,80px); padding-block:clamp(40px,6vw,76px) 0; align-items:start}
+.hero .copy{display:grid; gap:22px; align-content:start; min-width:0}
+.hero .sub{font:.86rem/1.55 var(--mono); color:var(--ink2)}
+.hero .lead{font:1.2rem/1.6 var(--serif); color:var(--ink2); max-width:36rem}
+.cta{display:flex; gap:10px; flex-wrap:wrap}
+.keys{display:grid; margin:0}
+.keys div{display:grid; gap:4px; padding-block:16px; border-top:1px solid var(--rule)}
+.keys div:first-child{border-top:1px solid var(--ink)}
+.keys dt{font:600 2.1rem/1.05 var(--serif); font-variant-numeric:tabular-nums}
+.keys dd{margin:0; font-size:.92rem; color:var(--ink2); line-height:1.45}
+.keys dd .src{display:block; margin-top:2px}
+
+/* sections */
+section.s{padding-block:clamp(64px,9vw,112px) 0}
+.s-head{display:grid; gap:12px; max-width:44rem; margin-bottom:32px}
+.s-head .label{margin-bottom:2px}
+.s-head p{color:var(--ink2); font-size:1.04rem}
+.prose{max-width:var(--measure); display:grid; gap:14px; color:var(--ink2); font-size:1.02rem}
+
+/* problem */
+.qs{list-style:none; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 36px; max-width:52rem; margin-bottom:30px}
+.qs li{font:500 1.18rem/1.4 var(--serif); padding-block:14px; border-top:1px solid var(--rule); color:var(--ink)}
+.qs li span{display:block; font:.74rem/1.4 var(--mono); color:var(--muted); margin-top:3px}
+.vs{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 36px; max-width:52rem; margin-top:34px}
+.vs div{display:grid; gap:6px; padding-top:14px; border-top:2px solid var(--ink); align-content:start}
+.vs div.them{border-top-color:var(--other)}
+.vs ul{padding-left:1.1em; color:var(--ink2); font-size:.95rem; display:grid; gap:4px}
+
+/* what I built */
+.flow{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 32px; list-style:none; padding:0; counter-reset:f}
+.flow li{display:grid; gap:8px; align-content:start; padding-top:14px; border-top:1px solid var(--ink); counter-increment:f}
+.flow li::before{content:"0" counter(f); font:500 .78rem var(--mono); color:var(--muted)}
+.flow p{color:var(--ink2); font-size:.95rem}
+.facts{display:flex; flex-wrap:wrap; gap:6px 22px; font:.82rem/1.5 var(--mono); color:var(--ink2); margin-top:28px; padding-top:14px; border-top:1px solid var(--rule)}
+.shots{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:40px 32px; margin-top:52px}
+.shots figure.wide{grid-column:1/-1}
+.shots figure.wide figcaption{font-size:.98rem; max-width:44rem}
+.shots figure{display:grid; gap:10px; align-content:start; min-width:0}
+.shots a.pic{display:block; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+.shots img{width:100%; height:auto; max-width:100%}
+.shots figcaption{font-size:.9rem; line-height:1.5; color:var(--ink2)}
+.shots figcaption b{color:var(--ink); font-weight:600}
+.shots figcaption .mono{font-family:var(--mono); font-size:.82rem}
+.note{font-size:.9rem; color:var(--ink2); max-width:46rem; margin-top:26px}
+
+/* results */
+.res{display:grid; gap:0}
+.block{display:grid; grid-template-columns:minmax(0,17rem) minmax(0,1fr); gap:clamp(20px,4vw,48px); padding-block:30px; border-top:1px solid var(--rule)}
+.block:first-child{border-top:1px solid var(--ink)}
+.block .big{display:grid; gap:6px; align-content:start}
+.block .big b{font:600 2.6rem/1 var(--serif); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.block .big span{font:.8rem/1.45 var(--mono); color:var(--muted)}
+.block .body{display:grid; gap:14px; align-content:start; min-width:0}
+.block .body p{color:var(--ink2); font-size:.98rem; max-width:44rem}
+.block .body p.src{font-size:.76rem; color:var(--muted); max-width:none}
+.tw{overflow-x:auto; max-width:100%}
+table{border-collapse:collapse; width:100%; font:.9rem/1.45 var(--sans)}
+th,td{text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--rule); vertical-align:top}
+thead th{font:500 .68rem/1.2 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--ink); white-space:nowrap}
+td.n,th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; padding-left:10px}
+tr.ours td{font-weight:600; color:var(--ink)}
+tr.ours td:first-child{box-shadow:inset 2px 0 0 var(--ink); padding-left:8px}
+td:first-child,th:first-child{padding-left:8px}
+td .sub{display:block; color:var(--muted); font-size:.78rem; font-weight:400}
+.auto td.n.hl,.auto tr.hl td{font-weight:600; color:var(--ink)}
+
+/* engagements */
+.eng{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0 28px; list-style:none; padding:0; counter-reset:e}
+.eng li{display:grid; gap:10px; align-content:start; padding-top:14px; border-top:2px solid var(--ink); counter-increment:e}
+.eng li::before{content:"0" counter(e); font:500 .78rem var(--mono); color:var(--muted)}
+.eng p{color:var(--ink2); font-size:.93rem}
+.eng .out{font:.78rem/1.5 var(--mono); color:var(--ink); padding-top:8px; border-top:1px solid var(--rule)}
+.eng .out::before{content:"You get: "; color:var(--muted)}
+.fit{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 36px; margin-top:44px; max-width:56rem}
+.fit div{display:grid; gap:6px; padding-block:14px; border-top:1px solid var(--rule); align-content:start}
+.fit p{font-size:.93rem; color:var(--ink2)}
+
+/* contact */
+.contact{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:clamp(28px,5vw,64px); align-items:start; padding-top:28px; border-top:1px solid var(--ink)}
+.contact .line{font:500 1.25rem/1.4 var(--mono); padding:14px 0; border-bottom:1px solid var(--rule)}
+.links{display:grid; gap:0; list-style:none; padding:0}
+.links li{border-top:1px solid var(--rule)}
+.links li:last-child{border-bottom:1px solid var(--rule)}
+.links a{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:12px 0; text-decoration:none}
+.links a span{color:var(--muted); font:.78rem/1.6 var(--mono); overflow-wrap:anywhere; text-align:right}
+.links a:hover b{text-decoration:underline; text-underline-offset:3px}
+.links b{font-weight:500}
+
+footer{margin-top:clamp(72px,9vw,112px); border-top:1px solid var(--rule); padding-block:24px 44px; font-size:.84rem; color:var(--muted)}
+footer p{max-width:52rem}
+
+@media (max-width: 960px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .eng{grid-template-columns:repeat(2,minmax(0,1fr)); gap:32px 28px}
+}
+@media (max-width: 720px){
+  body{font-size:16px}
+  header.top nav{margin-left:0; gap:14px; font-size:.86rem}
+  .word .who{display:none}
+  .qs,.vs,.flow,.shots,.eng,.fit,.contact{grid-template-columns:minmax(0,1fr)}
+  .flow{gap:22px} .vs{gap:22px} .shots{gap:34px}
+  .shots figure.wide figcaption{font-size:.9rem}
+  .block{grid-template-columns:minmax(0,1fr); gap:14px}
+  .block .big b{font-size:2.2rem}
+  .hero .lead{font-size:1.1rem}
+  .keys dt{font-size:1.8rem}
+  .links a{grid-template-columns:minmax(0,1fr)}
+  .links a span{text-align:left}
+  table{font-size:.84rem}
+  th,td{padding-right:8px}
+  td.n,th.n{padding-left:6px}
+}
+.sm{display:none}
+@media (max-width: 520px){
+  .hide-s{display:none}
+  td .sub{display:none}
+  .lg{display:none} .sm{display:inline}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="word" href="../"><img class="l-img" src="../assets/brand/mark-light.svg" alt=""><img class="d-img" src="../assets/brand/mark-dark.svg" alt="">imajev<span class="who">/ case study</span></a>
+  <nav aria-label="Sections"><a href="#results">Results</a><a href="#work">Work with me</a><a href="#contact">Contact</a><a href="../">Project site</a></nav>
+</div></header>
+
+<main id="top">
+<div class="wrap">
+  <div class="hero">
+    <div class="copy">
+      <span class="label">Case study · Mohit Garg · September 2026</span>
+      <h1>Decisions for real-world cases: an open 4B model, #1 on JevBench for text and images</h1>
+      <p class="sub">imajev-4b · JevBench v1.4.2.2, scored 27 Sep 2026 · Image JevBench v0.1.3, released 28 Sep 2026 · run by the benchmark's maintainer</p>
+      <p class="lead">I built a system that makes the small, repeated decisions a team makes all day: does this photo match the listing, is this the item we shipped, which queue owns this ticket. It answers in the options you set, acts when it is sure, and hands the rest to a person.</p>
+      <div class="cta">
+        <a class="btn solid" href="#contact">Talk about your workflow</a>
+        <a class="btn" href="https://huggingface.co/spaces/mohit67890/imajev">Try the live demo</a>
+      </div>
+    </div>
+    <dl class="keys" aria-label="Key results">
+      <div><dt>#1 of 91</dt><dd>JevBench Score, ahead of Jev 1.13.0, the closed original it follows<span class="src">v1.4.2.2 · scored 27 Sep 2026 · <a href="https://benchmarkheaven.com/jev-models">board</a></span></dd></div>
+      <div><dt>#1 of 49</dt><dd>Image JevBench: decisions from photos, ahead of Jev-Omni (12B)<span class="src">v0.1.3 · released 28 Sep 2026 · <a href="https://benchmarkheaven.com/image-jev-bench">board</a></span></dd></div>
+      <div><dt>#3 of 56</dt><dd>DecisionBench: ahead of GPT-5.6 Luna, DeepSeek V4.1 Flash (552B) and GLM-5.3 Flash (320B)<span class="src">eng, v1 · 28 Sep 2026 · <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard">leaderboard</a></span></dd></div>
+    </dl>
+  </div>
+</div>
+
+<section class="s" id="problem"><div class="wrap">
+  <div class="s-head"><span class="label">01 · The problem</span>
+    <h2>Thousands of small checks, each one a person's time</h2>
+    <p>Operations, support, QC and back-office teams answer the same narrow questions all day. Each takes a person seconds to a minute; added up, they fill whole shifts.</p></div>
+  <ul class="qs">
+    <li>Does the photo match the listing?<span>marketplace and D2C catalogue</span></li>
+    <li>Is the returned item the one we shipped?<span>returns and refunds</span></li>
+    <li>Is this part chipped?<span>production-line QC</span></li>
+    <li>Which queue does this ticket go to, and is it urgent?<span>customer support</span></li>
+    <li>Does this refund meet the policy?<span>support and finance</span></li>
+    <li>Does this email contradict the CRM record?<span>back office and records</span></li>
+  </ul>
+  <div class="prose">
+    <p>A chat model can answer these, but not in a form a workflow can use. It replies in prose that has to be parsed before it can go in an <code>if</code>. The frontier vision APIs we measured took 5 to 8 seconds per answer, every call is billed, and customer photos leave the building. And unless it is prompted to, a chat model does not say "I can't tell", so there is no clean point at which to hand a case to a person.</p>
+  </div>
+  <div class="vs">
+    <div class="them"><h3>A general chat model</h3><ul><li>Free-text answer to parse</li><li>Seconds per call, a bill per call</li><li>Photos go to a hosted API</li><li>Guesses when the evidence is thin</li></ul></div>
+    <div><h3>What a team actually needs</h3><ul><li>One of the answers you allowed, with a probability</li><li>Fast enough to sit inside a queue</li><li>Runs where the data already is</li><li>Says <i>can't tell</i>, so a person can take it</li></ul></div>
+  </div>
+</div></section>
+
+<section class="s" id="built"><div class="wrap">
+  <div class="s-head"><span class="label">02 · What I built</span>
+    <h2>A decision system that knows when to hand over</h2>
+    <p>imajev is a family of small open models (2B, 4B and 9B parameters) trained for one job: read the evidence a business already has and answer a closed question with a calibrated probability.</p></div>
+  <ol class="flow">
+    <li><h3>In: the evidence and a closed question</h3><p>A photo, or two (what we shipped and what came back), the record you already have, and a question with the answers you allow: <i>which field is wrong?</i> <i>same item, yes or no?</i> <i>which department?</i></p></li>
+    <li><h3>Out: a probability for each answer</h3><p>Every allowed answer gets a probability, plus one for <i>can't tell</i>. No prose to parse; the result drops straight into an <code>if</code>.</p></li>
+    <li><h3>Act when sure, route the rest</h3><p>The business sets a confidence bar per decision, based on what a mistake costs. Above it the system acts; below it, or when it says <i>can't tell</i>, the case goes to a person.</p></li>
+  </ol>
+  <p class="facts"><span>Runs on your own hardware: a Mac or one GPU</span><span>No per-call API bill</span><span>Photos and customer data stay in-house</span><span>Open weights, Apache-2.0</span></p>
+
+  <div class="shots">
+    <figure class="wide">
+      <a class="pic" href="../assets/gallery/listing-light.png"><img class="l-img" src="../assets/gallery/listing-light.png" width="1600" height="800" loading="lazy" alt="Marketplace listing check: the listing says red, the photo shows beige suede boat shoes; imajev-4b names listing.color at 0.960 and the app holds the listing"><img class="d-img" src="../assets/gallery/listing-dark.png" width="1600" height="800" loading="lazy" alt=""></a>
+      <figcaption><b>Listing check.</b> The listing says red; the photo shows beige suede. <span class="mono">listing.color 0.960</span> → hold the listing until the seller fixes it.</figcaption>
+    </figure>
+    <figure>
+      <a class="pic" href="../assets/gallery/returns-light.png"><img class="l-img" src="../assets/gallery/returns-light.png" width="1600" height="800" loading="lazy" alt="Return check: pink and black knit sneakers were shipped, beige boat shoes came back; same product? no 0.986; the app holds the refund"><img class="d-img" src="../assets/gallery/returns-dark.png" width="1600" height="800" loading="lazy" alt=""></a>
+      <figcaption><b>Return check.</b> Pink knit sneakers shipped, beige boat shoes returned. <span class="mono">same item: no 0.986</span> → hold the refund.</figcaption>
+    </figure>
+    <figure>
+      <a class="pic" href="../assets/gallery/qc-light.png"><img class="l-img" src="../assets/gallery/qc-light.png" width="1600" height="800" loading="lazy" alt="Production-line QC: a known-good part next to the part under inspection; chipped or broken edge 0.981; the app rejects the part"><img class="d-img" src="../assets/gallery/qc-dark.png" width="1600" height="800" loading="lazy" alt=""></a>
+      <figcaption><b>Production-line QC.</b> A known-good reference against the part on the line. <span class="mono">chipped or broken edge 0.981</span> → reject the part.</figcaption>
+    </figure>
+    <figure>
+      <a class="pic" href="../assets/gallery/ticket-light.png"><img class="l-img" src="../assets/gallery/ticket-light.png" width="1600" height="800" loading="lazy" alt="Support ticket triage, text only: a duplicate-billing complaint; billing 0.941; the app routes it to billing"><img class="d-img" src="../assets/gallery/ticket-dark.png" width="1600" height="800" loading="lazy" alt=""></a>
+      <figcaption><b>Ticket triage, text only.</b> A duplicate-billing complaint. <span class="mono">billing 0.941</span> → route to billing.</figcaption>
+    </figure>
+  </div>
+  <p class="note">These are real outputs of imajev-4b with its shipped calibration, from the checked example apps on the <a href="../">project site</a>. Every clickable combination in those apps was run and compared with the right answer; the misses are published too. One worth knowing: with a blank payment note, the model answered "not paid" instead of <i>can't tell</i>. That is why a pilot on your own cases comes before any automation.</p>
+</div></section>
+
+<section class="s" id="results"><div class="wrap">
+  <div class="s-head"><span class="label">03 · Measured results</span>
+    <h2>Independent boards, run by their maintainers</h2>
+    <p>The three rankings below were measured by the benchmarks' own maintainers, not by me. Each links to its source. Rankings move as new systems are added, so each is quoted with its version and date.</p></div>
+  <div class="res">
+    <div class="block">
+      <div class="big"><b>#1 of 91</b><span>JevBench Score<br>v1.4.2.2 · scored 27 Sep 2026</span></div>
+      <div class="body">
+        <p>JevBench ranks decision models of the Jev class. Its score weighs four things equally: accuracy (Intelligence), whether the stated confidence can be trusted (Calibration), speed and cost. imajev-4b leads Jev 1.13.0, the closed commercial model whose interface it follows, by 4.08 points. It is #3 on accuracy alone; the lead comes from balance, and it has the best calibration of the top 8 (80.4).</p>
+        <div class="tw"><table>
+          <thead><tr><th>#</th><th>System</th><th class="n">Score</th><th class="n">Intell.</th><th class="n">Calib.</th><th class="n hide-s">Speed</th><th class="n hide-s">Cost</th></tr></thead>
+          <tbody>
+            <tr class="ours"><td>1</td><td>imajev-4b<span class="sub">open weights</span></td><td class="n">67.37</td><td class="n">52.2</td><td class="n">80.4</td><td class="n hide-s">90.6</td><td class="n hide-s">59.7</td></tr>
+            <tr><td>2</td><td>Plumb-4B</td><td class="n">65.84</td><td class="n">53.0</td><td class="n">75.5</td><td class="n hide-s">93.5</td><td class="n hide-s">55.8</td></tr>
+            <tr><td>3</td><td>decider-4b v2</td><td class="n">64.13</td><td class="n">49.4</td><td class="n">75.0</td><td class="n hide-s">92.9</td><td class="n hide-s">60.9</td></tr>
+            <tr><td>4</td><td>Jev 1.13.0<span class="sub">TypeSafe AI, closed</span></td><td class="n">63.29</td><td class="n">53.1</td><td class="n">76.3</td><td class="n hide-s">83.3</td><td class="n hide-s">52.0</td></tr>
+            <tr><td>5</td><td>JevK5 v0.2.0</td><td class="n">62.04</td><td class="n">48.9</td><td class="n">74.5</td><td class="n hide-s">91.1</td><td class="n hide-s">59.5</td></tr>
+          </tbody></table></div>
+        <a class="pic" href="https://benchmarkheaven.com/jev-models"><img src="../assets/proof/proof-jevbench-score.png" alt="JevBench v1.4.2.2 board screenshot: 1 Imajev-4B 67.4" style="width:100%;height:auto;border:1px solid var(--rule);margin-top:6px"></a>
+        <p class="src">Top 5 of 91<span class="sm"> (Speed and Cost columns on wider screens)</span>. Board: <a href="https://benchmarkheaven.com/jev-models">benchmarkheaven.com/jev-models</a> (maintainer Florian Standhartinger) · data: <a href="https://github.com/fstandhartinger/jevbench/blob/main/results/v1.4.2.2/jevbench-v1.4.2.2-results.json">jevbench-v1.4.2.2-results.json</a>. Measured with one option order and the shipped calibration file. The board estimates cost at $0.022 per 1,000 decisions (Jev $0.040), from the base model's public list price.</p>
+      </div>
+    </div>
+    <div class="block">
+      <div class="big"><b>#1 of 49</b><span>Image JevBench v0.1.3<br>released 28 Sep 2026</span></div>
+      <div class="body">
+        <p>The same board's image benchmark: 684 decisions made from photos, screenshots and documents. imajev-4b scores 76.39, ahead of Jev-Omni, a 12B model (73.10), and NeoHorse Jev 4B (71.94). Its accuracy on the sealed items is 83.3%, second of the 44 systems that run on your own hardware.</p>
+        <a class="pic" href="https://benchmarkheaven.com/image-jev-bench"><img src="../assets/proof/proof-image-jevbench.png" alt="Image JevBench v0.1.3 board screenshot: 1 Imajev-4B 76.39" style="width:100%;height:auto;border:1px solid var(--rule);margin-top:6px"></a>
+        <p class="src">Board: <a href="https://benchmarkheaven.com/image-jev-bench">benchmarkheaven.com/image-jev-bench</a> (screenshot 29 Sep 2026). Measured on the fast server setting; the board notes that this version's fresh sealed items are its own synthetic images.</p>
+      </div>
+    </div>
+    <div class="block">
+      <div class="big"><b>#3 of 56</b><span>DecisionBench (eng, v1), Hanno-Labs<br>leaderboard, 28 Sep 2026</span></div>
+      <div class="body">
+        <p>79.65 across 23 tasks and 23,900 rows, every row answered. It is ahead of much larger general models: GLM-5.3 Flash (320B, 73.41), DeepSeek V4.1 Flash (552B, 70.68) and GPT-5.6 Luna (69.04), and of Jev 1.13 (71.90). The only two models ahead are the benchmark team's own, so imajev-4b is the highest-scoring model not built by the benchmark's team. On the separate Reasoning track it is #3 too (80.58), behind GLM-5.3 Flash and GPT-5.6 Luna.</p>
+        <a class="pic" href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img src="../assets/proof/proof-decisionbench.png" alt="DecisionBench (eng, v1) leaderboard screenshot: 3 imajev-4b 79.65" style="width:100%;height:auto;border:1px solid var(--rule);margin-top:6px"></a>
+        <p class="src">Leaderboard: <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard">Hanno-Labs/decision-bench-leaderboard</a> (screenshot 28 Sep 2026) · registry: <a href="https://github.com/Hanno-Labs/decision-bench-results">decision-bench-results</a> (results PR #68).</p>
+      </div>
+    </div>
+    <div class="block auto">
+      <div class="big"><b>58%</b><span>decided automatically at a 90% bar,<br>97.5% of them right</span></div>
+      <div class="body">
+        <p>The confidence bar is the dial a business controls. Raise it and fewer cases are automated, with fewer mistakes; everything below it goes to a person, including every <i>can't tell</i>. imajev-4b on the 279 test questions of ImajevBench:</p>
+        <div class="tw"><table>
+          <thead><tr><th><span class="lg">Act when at least</span><span class="sm">Bar</span></th><th class="n"><span class="lg">Decided automatically</span><span class="sm">Auto</span></th><th class="n"><span class="lg">Of those, right</span><span class="sm">Right</span></th><th class="n"><span class="lg">To a person</span><span class="sm">Person</span></th></tr></thead>
+          <tbody>
+            <tr><td>80% sure</td><td class="n">63%</td><td class="n">94.9%</td><td class="n">37%</td></tr>
+            <tr class="hl"><td>90% sure</td><td class="n">58%</td><td class="n">97.5%</td><td class="n">42%</td></tr>
+            <tr><td>99% sure</td><td class="n">40%</td><td class="n">100%</td><td class="n">60%</td></tr>
+          </tbody></table></div>
+        <p class="src">ImajevBench is the project's own benchmark (photos, records and text; 21 questions whose honest answer is <i>can't tell</i>), built to be hard. Treat these as a starting point: the right bar for your team comes from a few hundred of your own cases. Source: <a href="https://github.com/mohit67890/imajev#automate-what-is-clear-route-the-rest">README, "Automate what is clear, route the rest"</a>.</p>
+      </div>
+    </div>
+    <div class="block">
+      <div class="big"><b>~$676</b><span>rented GPU time,<br>the whole project</span></div>
+      <div class="body">
+        <p>About a million training decisions in four stages, on open base models, every run included. Small models and a careful data pipeline, not a large compute budget, produced these results, and the same pipeline works on your own data.</p>
+        <p class="src">Source: <a href="https://github.com/mohit67890/imajev#technical-specification">README, "Technical specification" (Compute)</a>.</p>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="s" id="work"><div class="wrap">
+  <div class="s-head"><span class="label">04 · How I work</span>
+    <h2>What I can build for your team</h2>
+    <p>Each step stands on its own and ends with something you can use, so you can stop after any of them.</p></div>
+  <ol class="eng">
+    <li><h3>Decision audit</h3><p>Pick one workflow. We list the decisions in it, how often each happens, what a mistake costs, and what evidence (photos, records, text) is already on hand.</p><p class="out">the decisions worth automating, written as closed questions, with a target bar for each</p></li>
+    <li><h3>Pilot on your own data</h3><p>A few hundred of your real cases, labelled with your team, including the ones nobody can decide. The model runs on them on your hardware.</p><p class="out">a measured accuracy-vs-automation curve on your cases and a recommended bar</p></li>
+    <li><h3>Tuning, if the pilot needs it</h3><p>Where accuracy falls short, I train a small adapter on your decisions and fit its calibration, with the same recipe used for imajev.</p><p class="out">a model tuned to your cases, re-measured on held-out ones</p></li>
+    <li><h3>Production hand-off</h3><p>Served on your own machines and wired into your queue or tools: the routing rule, a review queue for hand-offs, and tracking of the automated share and spot-checked accuracy.</p><p class="out">a running system, documentation, and a team that knows how to adjust the bar</p></li>
+  </ol>
+  <div class="fit">
+    <div><h3>Good fit</h3><p>High-volume, well-defined decisions with a clear set of answers: listings, returns, QC, ticket routing, refunds against a policy, records against documents. E-commerce and D2C operations, support, QC and back-office teams.</p></div>
+    <div><h3>Not a fit</h3><p>One-off strategic calls, open-ended writing, or anything that needs a safety, medical, legal or hiring certificate. The system answers the questions you set; it does not replace the judgement behind them.</p></div>
+  </div>
+</div></section>
+
+<section class="s" id="contact"><div class="wrap">
+  <div class="s-head"><span class="label">05 · Next step</span>
+    <h2>Have a workflow like this?</h2>
+    <p>Tell me which decision your team makes most often and roughly how many times a week. I will tell you whether it is a good candidate and what a pilot would measure.</p></div>
+  <div class="contact">
+    <div>
+      <!-- CONTACT: owner may swap in an email or LinkedIn URL -->
+      <p class="line">Message me on X: <a href="https://x.com/mohitt_garg">@mohitt_garg</a></p>
+      <p class="src" style="margin-top:12px">Mohit Garg · process consultant and builder · mohit67890 on GitHub and Hugging Face</p>
+    </div>
+    <ul class="links">
+      <li><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b><span>Hugging Face Space</span></a></li>
+      <li><a href="../report/"><b>Technical report</b><span>method, data, limits</span></a></li>
+      <li><a href="https://github.com/mohit67890/imajev"><b>Code</b><span>github.com/mohit67890/imajev</span></a></li>
+      <li><a href="https://huggingface.co/mohit67890/imajev-4b"><b>Model weights</b><span>huggingface.co/mohit67890/imajev-4b</span></a></li>
+      <li><a href="../"><b>Project site</b><span>checked examples and benchmarks</span></a></li>
+    </ul>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <p>Mohit Garg, September 2026. Benchmark rankings are from the linked boards on the dates shown; automation figures are from the project README. imajev is Apache-2.0; base models Qwen3.5 (Apache-2.0). Product photos in the examples are credited on the <a href="../">project site</a>.</p>
+</div></footer>
+</body>
+</html>
