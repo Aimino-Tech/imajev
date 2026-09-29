@@ -402,7 +402,7 @@ def draw_official_bars(ax, t, label_x=-1.2, size=10):
 
 
 def chart_jevbench_official(t, name):
-    fig = base_fig(t, 8.8, 4.8, "JevBench v1.4.2.2 (previous release): imajev-4b was #1 of 91",
+    fig = base_fig(t, 8.8, 4.8, "JevBench v1.4.2.2: imajev-4b is #1 of 91",
                    "JevBench Score (equal-weight harmonic mean of Intelligence, Calibration, Speed, Cost), scored 27 Sep 2026. Top 8 shown.",
                    JEVBENCH_OFFICIAL_SOURCE)
     ax = fig.add_axes([0.33, 0.13, 0.60, 0.69])
@@ -413,14 +413,15 @@ def chart_jevbench_official(t, name):
 def build_rank_banner():
     """README / model-card hero: the official ranks, big. assets/social/ranks-{light,dark}.png (1920x500)."""
     (OUT / "social").mkdir(parents=True, exist_ok=True)
-    cols = [("#1", "of 50", "Image JevBench v0.1.4", "images · released 29 Sep 2026", "ahead of Wity-1 (API) and Jev-Omni (12B)"),
-            ("#3", "of 56", "DecisionBench (eng, v1)", "leaderboard · 28 Sep 2026", "ahead of GPT-5.6 Luna and DeepSeek V4.1 (552B)")]
-    W, H = 10.0, 3.125
+    cols = [("#1", "of 91", "JevBench v1.4.2.2", "text · scored 27 Sep 2026", "ahead of Jev 1.13.0"),
+            ("#1", "of 49", "Image JevBench v0.1.3", "images · released 28 Sep 2026", "ahead of Jev-Omni (12B)"),
+            ("#3", "of 56", "DecisionBench (eng, v1)", "leaderboard · 28 Sep 2026", "ahead of GPT-5.6 Luna")]
+    W, H = 12.0, 3.125
     for name, t in THEMES.items():
         fig = plt.figure(figsize=(W, H), dpi=160); fig.patch.set_facecolor(t["bg"])
         r = fig.canvas.get_renderer()
         for i, (big, of, board, when, note) in enumerate(cols):
-            x = 0.06 + i / 2
+            x = 0.045 + i / 3
             tb = fig.text(x, 0.52, big, fontproperties=fp(DISPLAY, 60), color=t["ink"], va="baseline")
             bw = tb.get_window_extent(renderer=r).width / (W * 160)
             fig.text(x + bw + 0.01, 0.52, of, fontproperties=fp(DISPLAY, 24), color=t["ink2"], va="baseline")
@@ -428,7 +429,7 @@ def build_rank_banner():
             fig.text(x, 0.235, when, fontproperties=fp(MONO, 9), color=t["muted"], va="center")
             fig.text(x, 0.12, note, fontproperties=fp(SANS, 10), color=t["ink2"], va="center")
             if i:
-                fig.lines.append(matplotlib.lines.Line2D([i / 2 - 0.02] * 2, [0.08, 0.9], transform=fig.transFigure, color=t["hair"], linewidth=1))
+                fig.lines.append(matplotlib.lines.Line2D([i / 3 - 0.012] * 2, [0.08, 0.9], transform=fig.transFigure, color=t["hair"], linewidth=1))
         fig.savefig(OUT / "social" / f"ranks-{name}.png", facecolor=t["bg"]); plt.close(fig)
 
 
@@ -490,7 +491,7 @@ def build_social():
         fig.text(0.975, y - 0.034, f"{v:.3f}", fontproperties=fp(MONO, 10.5), color=t["ink2"], va="center", ha="right")
         y -= 0.105
     fig.text(0.60, 0.07, "github.com/mohit67890/imajev", fontproperties=fp(MONO_M, 12.5), color=t["accent"])
-    fig.text(0.055, 0.07, "#1 of 50 · Image JevBench v0.1.4 · 29 Sep 2026", fontproperties=fp(MONO_M, 13), color=t["ink"])
+    fig.text(0.055, 0.07, "#1 JevBench (text) · #1 Image JevBench · Sep 2026", fontproperties=fp(MONO_M, 13), color=t["ink"])
     fig.savefig(OUT / "social" / "social-card.png", facecolor=t["bg"]); plt.close(fig)
 
 

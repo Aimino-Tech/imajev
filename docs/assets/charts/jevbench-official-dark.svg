@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-09-29T21:44:46.148248</dc:date>
+    <dc:date>2026-09-29T00:44:53.536415</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -42,7 +42,7 @@ z
      <g id="line2d_1">
       <path d="M 209.088 300.672 
 L 209.088 62.208 
-" clip-path="url(#p6e1019ad70)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#p71193a4e23)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_2"/>
      <g id="text_1">
@@ -109,7 +109,7 @@ z
      <g id="line2d_3">
       <path d="M 304.128 300.672 
 L 304.128 62.208 
-" clip-path="url(#p6e1019ad70)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#p71193a4e23)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_4"/>
      <g id="text_2">
@@ -155,7 +155,7 @@ z
      <g id="line2d_5">
       <path d="M 399.168 300.672 
 L 399.168 62.208 
-" clip-path="url(#p6e1019ad70)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#p71193a4e23)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_6"/>
      <g id="text_3">
@@ -192,7 +192,7 @@ z
      <g id="line2d_7">
       <path d="M 494.208 300.672 
 L 494.208 62.208 
-" clip-path="url(#p6e1019ad70)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#p71193a4e23)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_8"/>
      <g id="text_4">
@@ -248,7 +248,7 @@ z
      <g id="line2d_9">
       <path d="M 589.248 300.672 
 L 589.248 62.208 
-" clip-path="url(#p6e1019ad70)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#p71193a4e23)" style="fill: none; stroke: #2a2a28; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_10"/>
      <g id="text_5">
@@ -318,7 +318,7 @@ L 529.23024 70.641483
 L 529.23024 88.671688 
 L 209.088 88.671688 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #ededea"/>
+" clip-path="url(#p71193a4e23)" style="fill: #ededea"/>
    </g>
    <g id="patch_4">
     <path d="M 209.088 99.722459 
@@ -326,7 +326,7 @@ L 521.95968 99.722459
 L 521.95968 117.752663 
 L 209.088 117.752663 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_5">
     <path d="M 209.088 128.803434 
@@ -334,7 +334,7 @@ L 513.83376 128.803434
 L 513.83376 146.833639 
 L 209.088 146.833639 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_6">
     <path d="M 209.088 157.88441 
@@ -342,7 +342,7 @@ L 509.84208 157.88441
 L 509.84208 175.914615 
 L 209.088 175.914615 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_7">
     <path d="M 209.088 186.965385 
@@ -350,7 +350,7 @@ L 503.90208 186.965385
 L 503.90208 204.99559 
 L 209.088 204.99559 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_8">
     <path d="M 209.088 216.046361 
@@ -358,7 +358,7 @@ L 502.57152 216.046361
 L 502.57152 234.076566 
 L 209.088 234.076566 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_9">
     <path d="M 209.088 245.127337 
@@ -366,7 +366,7 @@ L 491.49936 245.127337
 L 491.49936 263.157541 
 L 209.088 263.157541 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_10">
     <path d="M 209.088 274.208312 
@@ -374,7 +374,7 @@ L 473.20416 274.208312
 L 473.20416 292.238517 
 L 209.088 292.238517 
 z
-" clip-path="url(#p6e1019ad70)" style="fill: #6a6a66"/>
+" clip-path="url(#p71193a4e23)" style="fill: #6a6a66"/>
    </g>
    <g id="patch_11">
     <path d="M 209.088 300.672 
@@ -2239,7 +2239,7 @@ z
    </g>
   </g>
   <g id="text_22">
-   <!-- JevBench v1.4.2.2 (previous release): imajev-4b was #1 of 91 -->
+   <!-- JevBench v1.4.2.2: imajev-4b is #1 of 91 -->
    <g style="fill: #ededea" transform="translate(22.176 39.212) scale(0.17 -0.17)">
     <defs>
      <path id="SourceSerifDisplay-SemiBold-b" d="M 339 -890 
@@ -2658,126 +2658,25 @@ L 2925 0
 L 320 0 
 z
 " transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-1fe" d="M 1075 1773 
-Q 1075 1242 1174 762 
-Q 1274 282 1485 -169 
-Q 1696 -621 2016 -1062 
-L 1888 -1171 
-Q 1453 -762 1142 -301 
-Q 832 160 672 681 
-Q 512 1203 512 1773 
-Q 512 2342 672 2860 
-Q 832 3379 1142 3843 
-Q 1453 4307 1888 4710 
-L 2016 4602 
-Q 1696 4160 1485 3709 
-Q 1274 3258 1174 2781 
-Q 1075 2304 1075 1773 
+     <path id="SourceSerifDisplay-SemiBold-1e1" d="M 870 -64 
+Q 685 -64 557 61 
+Q 429 186 429 371 
+Q 429 557 557 685 
+Q 685 813 870 813 
+Q 1056 813 1181 685 
+Q 1306 557 1306 371 
+Q 1306 186 1181 61 
+Q 1056 -64 870 -64 
 z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-2b" d="M 198 -1581 
-L 198 -1421 
-L 806 -1318 
-L 1107 -1318 
-L 1760 -1421 
-L 1760 -1581 
-L 198 -1581 
-z
-M 602 -1581 
-Q 608 -1395 614 -1158 
-Q 621 -922 624 -675 
-Q 627 -429 627 -218 
-L 627 1619 
-Q 627 1811 624 1952 
-Q 621 2093 617 2214 
-Q 614 2336 608 2470 
-L 173 2566 
-L 173 2707 
-L 1190 3040 
-L 1267 2982 
-L 1286 2451 
-L 1293 2419 
-L 1293 506 
-L 1286 474 
-L 1286 -218 
-Q 1286 -429 1289 -675 
-Q 1293 -922 1296 -1158 
-Q 1299 -1395 1312 -1581 
-L 602 -1581 
-z
-M 2099 -90 
-Q 1920 -90 1753 -26 
-Q 1587 38 1440 176 
-Q 1293 314 1171 538 
-L 1075 538 
-L 1120 755 
-Q 1325 499 1497 390 
-Q 1670 282 1901 282 
-Q 2112 282 2275 413 
-Q 2438 544 2537 813 
-Q 2637 1082 2637 1498 
-Q 2637 2112 2429 2393 
-Q 2221 2675 1907 2675 
-Q 1760 2675 1629 2611 
-Q 1498 2547 1373 2428 
-Q 1248 2310 1126 2157 
-L 1082 2387 
-L 1184 2387 
-Q 1299 2592 1449 2736 
-Q 1600 2880 1779 2960 
-Q 1958 3040 2176 3040 
-Q 2502 3040 2764 2870 
-Q 3027 2701 3184 2365 
-Q 3341 2029 3341 1536 
-Q 3341 1030 3174 665 
-Q 3008 301 2729 105 
-Q 2451 -90 2099 -90 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-2d" d="M 205 0 
-L 205 160 
-L 806 262 
-L 1126 262 
-L 1773 160 
-L 1773 0 
-L 205 0 
-z
-M 595 0 
-Q 608 154 611 390 
-Q 614 627 617 883 
-Q 621 1139 621 1344 
-L 621 1619 
-Q 621 1811 617 1952 
-Q 614 2093 611 2214 
-Q 608 2336 602 2470 
-L 166 2566 
-L 166 2707 
-L 1190 3040 
-L 1267 2982 
-L 1286 2112 
-L 1286 2093 
-L 1286 1344 
-Q 1286 1139 1289 883 
-Q 1293 627 1299 390 
-Q 1306 154 1318 0 
-L 595 0 
-z
-M 1261 1709 
-L 1152 2074 
-L 1254 2074 
-Q 1350 2400 1494 2611 
-Q 1638 2822 1814 2931 
-Q 1990 3040 2176 3040 
-Q 2349 3040 2473 2960 
-Q 2598 2880 2637 2701 
-Q 2630 2502 2515 2396 
-Q 2400 2291 2240 2291 
-Q 2118 2291 2016 2348 
-Q 1914 2406 1818 2528 
-L 1670 2714 
-L 1907 2714 
-Q 1709 2605 1526 2339 
-Q 1344 2074 1261 1709 
+M 870 2093 
+Q 685 2093 557 2218 
+Q 429 2343 429 2528 
+Q 429 2714 557 2842 
+Q 685 2970 870 2970 
+Q 1056 2970 1181 2842 
+Q 1306 2714 1306 2528 
+Q 1306 2343 1181 2218 
+Q 1056 2093 870 2093 
 z
 " transform="scale(0.015625)"/>
      <path id="SourceSerifDisplay-SemiBold-24" d="M 198 0 
@@ -2815,236 +2714,6 @@ Q 1114 4429 1232 4317
 Q 1350 4205 1350 4026 
 Q 1350 3840 1232 3728 
 Q 1114 3616 934 3616 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-2a" d="M 1683 -90 
-Q 1274 -90 947 96 
-Q 621 282 435 630 
-Q 250 979 250 1472 
-Q 250 1965 445 2317 
-Q 640 2669 966 2854 
-Q 1293 3040 1683 3040 
-Q 2093 3040 2419 2857 
-Q 2746 2675 2934 2326 
-Q 3123 1978 3123 1485 
-Q 3123 992 2931 640 
-Q 2739 288 2412 99 
-Q 2086 -90 1683 -90 
-z
-M 1683 109 
-Q 1914 109 2074 256 
-Q 2234 403 2317 707 
-Q 2400 1011 2400 1478 
-Q 2400 1958 2317 2256 
-Q 2234 2554 2074 2698 
-Q 1914 2842 1683 2842 
-Q 1459 2842 1299 2698 
-Q 1139 2554 1056 2250 
-Q 973 1946 973 1472 
-Q 973 998 1056 697 
-Q 1139 397 1299 253 
-Q 1459 109 1683 109 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-30" d="M 1338 -90 
-Q 960 -90 742 147 
-Q 525 384 525 934 
-L 544 2739 
-L 704 2560 
-L 141 2675 
-L 141 2829 
-L 1152 3034 
-L 1222 2970 
-L 1197 2138 
-L 1197 960 
-Q 1197 602 1309 474 
-Q 1421 346 1651 346 
-Q 1786 346 1923 397 
-Q 2061 448 2201 557 
-Q 2342 666 2477 813 
-L 2534 608 
-L 2464 608 
-Q 2336 410 2157 250 
-Q 1978 90 1773 0 
-Q 1568 -90 1338 -90 
-z
-M 2400 -70 
-L 2381 595 
-L 2381 608 
-L 2387 2592 
-L 1978 2675 
-L 1978 2829 
-L 3002 3034 
-L 3072 2970 
-L 3046 2138 
-L 3046 224 
-L 3430 160 
-L 3430 0 
-L 2400 -70 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-2e" d="M 1222 -90 
-Q 947 -90 726 -26 
-Q 506 38 275 166 
-L 301 947 
-L 506 947 
-L 762 102 
-L 518 102 
-L 518 301 
-Q 678 205 841 153 
-Q 1005 102 1222 102 
-Q 1427 102 1564 166 
-Q 1702 230 1772 345 
-Q 1843 461 1843 608 
-Q 1843 832 1680 953 
-Q 1517 1075 1261 1178 
-L 1037 1261 
-Q 845 1344 675 1453 
-Q 506 1562 400 1725 
-Q 294 1888 294 2131 
-Q 294 2394 419 2598 
-Q 544 2803 784 2921 
-Q 1024 3040 1382 3040 
-Q 1632 3040 1837 2982 
-Q 2042 2925 2240 2810 
-L 2208 2086 
-L 2010 2086 
-L 1760 2854 
-L 2016 2854 
-L 2016 2637 
-Q 1869 2746 1718 2797 
-Q 1568 2848 1376 2848 
-Q 1114 2848 970 2723 
-Q 826 2598 826 2394 
-Q 826 2170 982 2051 
-Q 1139 1933 1395 1824 
-L 1600 1747 
-Q 1824 1664 2003 1549 
-Q 2182 1434 2288 1267 
-Q 2394 1101 2394 851 
-Q 2394 570 2259 358 
-Q 2125 147 1862 28 
-Q 1600 -90 1222 -90 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-27" d="M 186 0 
-L 186 160 
-L 794 262 
-L 1082 262 
-L 1683 160 
-L 1683 0 
-L 186 0 
-z
-M 582 0 
-Q 595 179 601 412 
-Q 608 646 611 889 
-Q 614 1133 614 1344 
-L 614 4205 
-L 160 4294 
-L 160 4442 
-L 1229 4717 
-L 1306 4653 
-L 1280 3552 
-L 1280 1344 
-Q 1280 1133 1283 889 
-Q 1286 646 1289 412 
-Q 1293 179 1306 0 
-L 582 0 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-1c" d="M 1011 -90 
-Q 672 -90 448 105 
-Q 224 301 224 666 
-Q 224 864 313 1037 
-Q 403 1210 630 1360 
-Q 858 1510 1280 1638 
-Q 1408 1677 1558 1721 
-Q 1709 1766 1881 1811 
-Q 2054 1856 2240 1907 
-L 2240 1747 
-Q 1971 1670 1772 1606 
-Q 1574 1542 1453 1491 
-Q 1222 1402 1100 1293 
-Q 979 1184 931 1062 
-Q 883 941 883 800 
-Q 883 544 1011 429 
-Q 1139 314 1331 314 
-Q 1446 314 1545 346 
-Q 1645 378 1769 461 
-Q 1894 544 2074 698 
-L 2138 429 
-L 1933 429 
-Q 1786 250 1645 134 
-Q 1504 19 1350 -35 
-Q 1197 -90 1011 -90 
-z
-M 2470 -70 
-Q 2195 -70 2044 77 
-Q 1894 224 1875 480 
-L 1875 499 
-L 1875 2022 
-Q 1875 2336 1824 2509 
-Q 1773 2682 1654 2755 
-Q 1536 2829 1331 2829 
-Q 1222 2829 1107 2803 
-Q 992 2778 864 2733 
-L 1094 2899 
-L 1005 2406 
-Q 979 2195 876 2099 
-Q 774 2003 640 2003 
-Q 506 2003 432 2073 
-Q 358 2144 333 2272 
-Q 384 2618 717 2829 
-Q 1050 3040 1555 3040 
-Q 1901 3040 2118 2928 
-Q 2336 2816 2438 2576 
-Q 2541 2336 2541 1952 
-L 2541 531 
-Q 2541 378 2589 314 
-Q 2637 250 2720 250 
-Q 2790 250 2844 285 
-Q 2899 320 2963 403 
-L 3066 320 
-Q 2982 134 2835 32 
-Q 2688 -70 2470 -70 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-1ff" d="M 1127 1773 
-Q 1127 2304 1027 2784 
-Q 928 3264 717 3715 
-Q 506 4167 186 4608 
-L 314 4717 
-Q 749 4308 1059 3847 
-Q 1370 3386 1530 2864 
-Q 1690 2343 1690 1773 
-Q 1690 1204 1530 685 
-Q 1370 167 1059 -297 
-Q 749 -761 314 -1164 
-L 186 -1056 
-Q 506 -614 717 -163 
-Q 928 288 1027 765 
-Q 1127 1242 1127 1773 
-z
-" transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-1e1" d="M 870 -64 
-Q 685 -64 557 61 
-Q 429 186 429 371 
-Q 429 557 557 685 
-Q 685 813 870 813 
-Q 1056 813 1181 685 
-Q 1306 557 1306 371 
-Q 1306 186 1181 61 
-Q 1056 -64 870 -64 
-z
-M 870 2093 
-Q 685 2093 557 2218 
-Q 429 2343 429 2528 
-Q 429 2714 557 2842 
-Q 685 2970 870 2970 
-Q 1056 2970 1181 2842 
-Q 1306 2714 1306 2528 
-Q 1306 2343 1181 2218 
-Q 1056 2093 870 2093 
 z
 " transform="scale(0.015625)"/>
      <path id="SourceSerifDisplay-SemiBold-28" d="M 198 0 
@@ -3136,6 +2805,63 @@ Q 4954 1139 4957 883
 Q 4960 627 4966 390 
 Q 4973 154 4979 0 
 L 4262 0 
+z
+" transform="scale(0.015625)"/>
+     <path id="SourceSerifDisplay-SemiBold-1c" d="M 1011 -90 
+Q 672 -90 448 105 
+Q 224 301 224 666 
+Q 224 864 313 1037 
+Q 403 1210 630 1360 
+Q 858 1510 1280 1638 
+Q 1408 1677 1558 1721 
+Q 1709 1766 1881 1811 
+Q 2054 1856 2240 1907 
+L 2240 1747 
+Q 1971 1670 1772 1606 
+Q 1574 1542 1453 1491 
+Q 1222 1402 1100 1293 
+Q 979 1184 931 1062 
+Q 883 941 883 800 
+Q 883 544 1011 429 
+Q 1139 314 1331 314 
+Q 1446 314 1545 346 
+Q 1645 378 1769 461 
+Q 1894 544 2074 698 
+L 2138 429 
+L 1933 429 
+Q 1786 250 1645 134 
+Q 1504 19 1350 -35 
+Q 1197 -90 1011 -90 
+z
+M 2470 -70 
+Q 2195 -70 2044 77 
+Q 1894 224 1875 480 
+L 1875 499 
+L 1875 2022 
+Q 1875 2336 1824 2509 
+Q 1773 2682 1654 2755 
+Q 1536 2829 1331 2829 
+Q 1222 2829 1107 2803 
+Q 992 2778 864 2733 
+L 1094 2899 
+L 1005 2406 
+Q 979 2195 876 2099 
+Q 774 2003 640 2003 
+Q 506 2003 432 2073 
+Q 358 2144 333 2272 
+Q 384 2618 717 2829 
+Q 1050 3040 1555 3040 
+Q 1901 3040 2118 2928 
+Q 2336 2816 2438 2576 
+Q 2541 2336 2541 1952 
+L 2541 531 
+Q 2541 378 2589 314 
+Q 2637 250 2720 250 
+Q 2790 250 2844 285 
+Q 2899 320 2963 403 
+L 3066 320 
+Q 2982 134 2835 32 
+Q 2688 -70 2470 -70 
 z
 " transform="scale(0.015625)"/>
      <path id="SourceSerifDisplay-SemiBold-25" d="M 128 -1600 
@@ -3236,50 +2962,48 @@ Q 3014 301 2736 105
 Q 2458 -90 2106 -90 
 z
 " transform="scale(0.015625)"/>
-     <path id="SourceSerifDisplay-SemiBold-32" d="M 1293 -19 
-L 243 2957 
-L 979 2957 
-L 1715 627 
-L 1600 627 
-L 1626 710 
-L 2381 2957 
-L 2733 2957 
-L 3514 634 
-L 3398 634 
-L 3424 723 
-L 4141 2957 
-L 4397 2957 
-L 3386 -19 
-L 3098 -19 
-L 2291 2304 
-L 2394 2304 
-L 2374 2240 
-L 1587 -19 
-L 1293 -19 
-z
-M 19 2790 
-L 19 2957 
-L 1466 2957 
-L 1466 2797 
-L 870 2701 
-L 570 2701 
-L 19 2790 
-z
-M 1888 2797 
-L 1888 2957 
-L 3226 2957 
-L 3226 2797 
-L 2694 2714 
-L 2432 2720 
-L 1888 2797 
-z
-M 3648 2797 
-L 3648 2957 
-L 4653 2957 
-L 4653 2790 
-L 4237 2720 
-L 4154 2720 
-L 3648 2797 
+     <path id="SourceSerifDisplay-SemiBold-2e" d="M 1222 -90 
+Q 947 -90 726 -26 
+Q 506 38 275 166 
+L 301 947 
+L 506 947 
+L 762 102 
+L 518 102 
+L 518 301 
+Q 678 205 841 153 
+Q 1005 102 1222 102 
+Q 1427 102 1564 166 
+Q 1702 230 1772 345 
+Q 1843 461 1843 608 
+Q 1843 832 1680 953 
+Q 1517 1075 1261 1178 
+L 1037 1261 
+Q 845 1344 675 1453 
+Q 506 1562 400 1725 
+Q 294 1888 294 2131 
+Q 294 2394 419 2598 
+Q 544 2803 784 2921 
+Q 1024 3040 1382 3040 
+Q 1632 3040 1837 2982 
+Q 2042 2925 2240 2810 
+L 2208 2086 
+L 2010 2086 
+L 1760 2854 
+L 2016 2854 
+L 2016 2637 
+Q 1869 2746 1718 2797 
+Q 1568 2848 1376 2848 
+Q 1114 2848 970 2723 
+Q 826 2598 826 2394 
+Q 826 2170 982 2051 
+Q 1139 1933 1395 1824 
+L 1600 1747 
+Q 1824 1664 2003 1549 
+Q 2182 1434 2288 1267 
+Q 2394 1101 2394 851 
+Q 2394 570 2259 358 
+Q 2125 147 1862 28 
+Q 1600 -90 1222 -90 
 z
 " transform="scale(0.015625)"/>
      <path id="SourceSerifDisplay-SemiBold-222" d="M 621 0 
@@ -3305,6 +3029,35 @@ L 2592 4134
 L 2880 4134 
 L 2246 0 
 L 1965 0 
+z
+" transform="scale(0.015625)"/>
+     <path id="SourceSerifDisplay-SemiBold-2a" d="M 1683 -90 
+Q 1274 -90 947 96 
+Q 621 282 435 630 
+Q 250 979 250 1472 
+Q 250 1965 445 2317 
+Q 640 2669 966 2854 
+Q 1293 3040 1683 3040 
+Q 2093 3040 2419 2857 
+Q 2746 2675 2934 2326 
+Q 3123 1978 3123 1485 
+Q 3123 992 2931 640 
+Q 2739 288 2412 99 
+Q 2086 -90 1683 -90 
+z
+M 1683 109 
+Q 1914 109 2074 256 
+Q 2234 403 2317 707 
+Q 2400 1011 2400 1478 
+Q 2400 1958 2317 2256 
+Q 2234 2554 2074 2698 
+Q 1914 2842 1683 2842 
+Q 1459 2842 1299 2698 
+Q 1139 2554 1056 2250 
+Q 973 1946 973 1472 
+Q 973 998 1056 697 
+Q 1139 397 1299 253 
+Q 1459 109 1683 109 
 z
 " transform="scale(0.015625)"/>
      <path id="SourceSerifDisplay-SemiBold-21" d="M 198 0 
@@ -3414,49 +3167,29 @@ z
     <use xlink:href="#SourceSerifDisplay-SemiBold-1ae" transform="translate(615.40625 0)"/>
     <use xlink:href="#SourceSerifDisplay-SemiBold-1df" transform="translate(665.109375 0)"/>
     <use xlink:href="#SourceSerifDisplay-SemiBold-1ae" transform="translate(692.3125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(742.015625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1fe" transform="translate(762.71875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2b" transform="translate(797.125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2d" transform="translate(853.125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(893.734375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-31" transform="translate(940.734375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-24" transform="translate(989.53125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2a" transform="translate(1017.828125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-30" transform="translate(1070.125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2e" transform="translate(1126.625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1167.625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2d" transform="translate(1188.328125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(1228.9375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-27" transform="translate(1275.75 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(1304.140625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1c" transform="translate(1351.546875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2e" transform="translate(1400.15625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(1441.15625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1ff" transform="translate(1486.96875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1e1" transform="translate(1521.375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1548.578125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-24" transform="translate(1569.28125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-28" transform="translate(1597.984375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1c" transform="translate(1683.875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-25" transform="translate(1731.375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(1758.96875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-31" transform="translate(1805.96875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1f6" transform="translate(1852.265625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1b0" transform="translate(1882.96875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1d" transform="translate(1932.671875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1988.765625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-32" transform="translate(2009.46875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1c" transform="translate(2081.265625 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2e" transform="translate(2129.875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(2170.875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-222" transform="translate(2191.578125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1ad" transform="translate(2246.078125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(2295.78125 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-2a" transform="translate(2316.484375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-21" transform="translate(2368.59375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(2402.09375 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1b5" transform="translate(2422.796875 0)"/>
-    <use xlink:href="#SourceSerifDisplay-SemiBold-1ad" transform="translate(2472.5 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1e1" transform="translate(742.015625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(769.21875 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-24" transform="translate(789.921875 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-28" transform="translate(818.625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1c" transform="translate(904.515625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-25" transform="translate(952.015625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-20" transform="translate(979.609375 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-31" transform="translate(1026.609375 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1f6" transform="translate(1072.90625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1b0" transform="translate(1103.609375 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1d" transform="translate(1153.3125 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1209.40625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-24" transform="translate(1230.109375 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-2e" transform="translate(1258.8125 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1299.8125 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-222" transform="translate(1320.515625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1ad" transform="translate(1375.015625 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1424.71875 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-2a" transform="translate(1445.421875 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-21" transform="translate(1497.53125 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1" transform="translate(1531.03125 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1b5" transform="translate(1551.734375 0)"/>
+    <use xlink:href="#SourceSerifDisplay-SemiBold-1ad" transform="translate(1601.4375 0)"/>
    </g>
   </g>
   <g id="text_23">
@@ -4531,7 +4264,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p6e1019ad70">
+  <clipPath id="p71193a4e23">
    <rect x="209.088" y="62.208" width="380.16" height="238.464"/>
   </clipPath>
  </defs>
