@@ -538,6 +538,10 @@ harness in `src/imajev_bench`, leaderboard in `bench/LEADERBOARD.md`. Run your m
 imajev is built and maintained by Mohit Garg ([mohit67890](https://github.com/mohit67890) on GitHub and Hugging Face),
 with Claude (Anthropic) as a co-author on the code. To cite it, see `CITATION.cff`.
 
+**Work with me.** I build decision systems like this for operations, support and back-office teams: refunds, returns, ticket
+routing, document and photo checks. See the [case study](https://mohit67890.github.io/imajev/case-study/) or get in touch at
+[mohitgarg.ai](https://mohitgarg.ai).
+
 ## Acknowledgements
 
 Qwen3.5 (Alibaba) for the base models; Qwen3.6 and gpt-oss (OpenAI) as open-weight teachers; TypeSafe's Jev documentation for the
