@@ -311,6 +311,13 @@ Send JSON requests with `state` and `questions`, as above, and omit images. Text
 multimodal processor loads when an image is requested. Image serving requires the existing `.[serve,torch]` extra,
 including torchvision. This uses the same Qwen model and decision head; CPU serving still loads the full checkpoint.
 
+On Windows on ARM, PyPI has no torch wheel, so install from PyTorch's CPU index (tested on a Snapdragon X Elite):
+
+```sh
+uv pip install --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple \
+  --index-strategy unsafe-best-match -e ".[serve,torch-text]"
+```
+
 On a CUDA GPU, `--fast` makes the torch backend quicker without changing what it computes: one tokenization per question,
 image normalisation on the GPU (pixels bit-identical to the processor's), and CUDA graphs of the language model recorded at
 load (about a minute; needs a C compiler for the Triton kernels, e.g. `build-essential`). `--merge-lora` also folds the adapter
