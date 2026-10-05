@@ -165,40 +165,100 @@ class TorchBackend:
         if thinking is not None and thinking.active and self.rotations != 1:
             raise PlaygroundError(422, "invalid_request", "thinking needs a server running --rotations 1")
         results, seconds, tokens, thoughts = [], 0.0, 0, []
+        compiled = []
         for field in request.fields:
             header, choices, texts = compile_question(field, request.state, getattr(self, "prompt_layout", "standard"))
             labels = self.engine.labels(len(choices), len(images))
-            start = perf_counter()
-            passes = []
-            for offset in cyclic_offsets(len(choices), self.rotations):
-                prompt = header + "\n".join(f"{label}: {text}" for label, text in zip(labels, rotate(texts, offset)))
-                if getattr(self, "fast", False):
-                    with self.torch.inference_mode():
-                        _, inputs, token_ids = self.engine.prepare_fast(images, prompt, labels)
-                        logits = [float(x) for x in self.engine.candidate_logits_fast(inputs, token_ids).cpu().tolist()]
-                else:
-                    with self.torch.no_grad():
-                        _, inputs, token_ids = self.engine.prepare(images, prompt, labels)
-                        logits = [float(x) for x in self.engine.candidate_logits(inputs, token_ids).cpu().tolist()]
-                tokens = max(tokens, int(inputs["input_ids"].shape[-1]))
-                passes.append((offset, logits, token_ids))
-            seconds += perf_counter() - start
-            if len(passes) == 1:
-                result = result_from_logits(choices, passes[0][1], token_ids=passes[0][2])
-            else:
-                result = combine_rotations(choices, [(offset, logits) for offset, logits, _ in passes])
-            if thinking is not None and thinking.should_think(result):
+            compiled.append((field, header, choices, texts, labels))
+        use_batch = (
+            getattr(self, "fast", False) is False
+            and (thinking is None or not thinking.active)
+            and len(compiled) > 1
+            and getattr(getattr(self.engine, "device", None), "type", getattr(self.engine, "device", "")) == "cuda"
+        )
+        if use_batch:
+            try:
+                results = self._score_batched(images, compiled)
+                tokens = max(tokens, self._last_batch_tokens)
+            except Exception:
+                log.exception("batched torch scoring failed; falling back to serial")
+                use_batch = False
+                results = []
+        if not use_batch:
+            for field, header, choices, texts, labels in compiled:
                 start = perf_counter()
-                thought_result, note = self._think(images, prompt, choices, labels, thinking)
-                result = thought_result or result
-                note["think_ms"] = round((perf_counter() - start) * 1000, 1)
-                thoughts.append({"question": field.id, **note})
-            results.append(result)
+                passes = []
+                for offset in cyclic_offsets(len(choices), self.rotations):
+                    prompt = header + "\n".join(f"{label}: {text}" for label, text in zip(labels, rotate(texts, offset)))
+                    if getattr(self, "fast", False):
+                        with self.torch.inference_mode():
+                            _, inputs, token_ids = self.engine.prepare_fast(images, prompt, labels)
+                            logits = [float(x) for x in self.engine.candidate_logits_fast(inputs, token_ids).cpu().tolist()]
+                    else:
+                        with self.torch.no_grad():
+                            _, inputs, token_ids = self.engine.prepare(images, prompt, labels)
+                            logits = [float(x) for x in self.engine.candidate_logits(inputs, token_ids).cpu().tolist()]
+                    tokens = max(tokens, int(inputs["input_ids"].shape[-1]))
+                    passes.append((offset, logits, token_ids))
+                seconds += perf_counter() - start
+                if len(passes) == 1:
+                    result = result_from_logits(choices, passes[0][1], token_ids=passes[0][2])
+                else:
+                    result = combine_rotations(choices, [(offset, logits) for offset, logits, _ in passes])
+                if thinking is not None and thinking.should_think(result):
+                    start = perf_counter()
+                    thought_result, note = self._think(images, prompt, choices, labels, thinking)
+                    result = thought_result or result
+                    note["think_ms"] = round((perf_counter() - start) * 1000, 1)
+                    thoughts.append({"question": field.id, **note})
+                results.append(result)
         # No shared prefill on this path: the whole cost is reported per question.
-        usage = {"prefill_ms": 0.0, "questions_ms": round(seconds * 1000, 1), "input_tokens": tokens, "rotations": self.rotations}
+        usage = {"prefill_ms": 0.0, "questions_ms": round((seconds + getattr(self, "_batch_seconds", 0.0)) * 1000, 1), "input_tokens": tokens, "rotations": self.rotations}
         if thinking is not None and thinking.active:
             usage["thinking"] = {"mode": thinking.mode, "max_tokens": thinking.max_tokens, "thought": thoughts}
+        self._batch_seconds = 0.0
         return results, usage
+
+    def _score_batched(self, images, compiled):
+        """One forward per rotation offset across all questions (CUDA only).
+
+        Groups questions by rotation offset, renders each (prompt, labels) pair,
+        collates into a single left-padded batch via the engine, and reads
+        per-question logits from one candidate_logits_batch call. Falls back to
+        serial on any alignment error (collate asserts the decision suffix).
+        """
+        from time import perf_counter as _pc
+        start = _pc()
+        max_rots = max(len(cyclic_offsets(len(choices), self.rotations)) for _, _, choices, _, _ in compiled)
+        per_q = [[] for _ in compiled]
+        max_tokens = 0
+        for r in range(max_rots):
+            examples, owners = [], []
+            for qi, (field, header, choices, texts, labels) in enumerate(compiled):
+                offsets = cyclic_offsets(len(choices), self.rotations)
+                if r >= len(offsets):
+                    continue
+                offset = offsets[r]
+                prompt = header + "\n".join(f"{label}: {text}" for label, text in zip(labels, rotate(texts, offset)))
+                rendered, imgs, tids = self.engine.render_example(images, prompt, labels)
+                examples.append((rendered, imgs, tids, None))
+                owners.append((qi, offset, tids))
+            with self.torch.no_grad():
+                inputs, tids_list, _ = self.engine.collate(examples)
+                batch_logits = self.engine.candidate_logits_batch(inputs, tids_list)
+            max_tokens = max(max_tokens, int(inputs["input_ids"].shape[-1]))
+            for (qi, offset, _), logits_t in zip(owners, batch_logits):
+                per_q[qi].append((offset, [float(x) for x in logits_t.cpu().tolist()]))
+        self._last_batch_tokens = max_tokens
+        self._batch_seconds = _pc() - start
+        out = []
+        for qi, (field, header, choices, texts, labels) in enumerate(compiled):
+            passes = per_q[qi]
+            if len(passes) == 1:
+                out.append(result_from_logits(choices, passes[0][1]))
+            else:
+                out.append(combine_rotations(choices, [(offset, logits) for offset, logits in passes]))
+        return out
 
     def _think(self, images, prompt, choices, labels, thinking):
         """-> (the Result read after a greedy thought, a usage note). `prompt` is the rotations == 1 single-pass prompt."""
