@@ -171,8 +171,7 @@ class TorchBackend:
             labels = self.engine.labels(len(choices), len(images))
             compiled.append((field, header, choices, texts, labels))
         use_batch = (
-            getattr(self, "fast", False) is False
-            and (thinking is None or not thinking.active)
+            (thinking is None or not thinking.active)
             and len(compiled) > 1
             and getattr(getattr(self.engine, "device", None), "type", getattr(self.engine, "device", "")) == "cuda"
         )
@@ -232,6 +231,7 @@ class TorchBackend:
         max_rots = max(len(cyclic_offsets(len(choices), self.rotations)) for _, _, choices, _, _ in compiled)
         per_q = [[] for _ in compiled]
         max_tokens = 0
+        fast = getattr(self, "fast", False)
         for r in range(max_rots):
             examples, owners = [], []
             for qi, (field, header, choices, texts, labels) in enumerate(compiled):
@@ -243,9 +243,14 @@ class TorchBackend:
                 rendered, imgs, tids = self.engine.render_example(images, prompt, labels)
                 examples.append((rendered, imgs, tids, None))
                 owners.append((qi, offset, tids))
-            with self.torch.no_grad():
-                inputs, tids_list, _ = self.engine.collate(examples)
-                batch_logits = self.engine.candidate_logits_batch(inputs, tids_list)
+            if fast:
+                with self.torch.inference_mode():
+                    inputs, tids_list, _ = self.engine.collate_fast(examples)
+                    batch_logits = self.engine.candidate_logits_batch_fast(inputs, tids_list)
+            else:
+                with self.torch.no_grad():
+                    inputs, tids_list, _ = self.engine.collate(examples)
+                    batch_logits = self.engine.candidate_logits_batch(inputs, tids_list)
             max_tokens = max(max_tokens, int(inputs["input_ids"].shape[-1]))
             for (qi, offset, _), logits_t in zip(owners, batch_logits):
                 per_q[qi].append((offset, [float(x) for x in logits_t.cpu().tolist()]))
