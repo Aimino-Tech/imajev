@@ -87,3 +87,10 @@ Chunk-Raster. Layer-Hooks: Drift 0.001 (l0) → 0.625 (l31), monoton
 akkumulierend, kein Sprung-Layer. Deutung: GDN-Recurrence setzt über Split
 nicht exakt fort (Fallback-Kernel, causal_conv1d+FLA fehlen); kleiner
 Anfangsfehler verstärkt sich pro Layer. Deterministisch, argmax-stabil.
+Messung 12:4x (FLA 0.5.2 aktiv via triton 3.8.0, causal_conv1d fehlt weiter —
+CUDA-Mismatch, nicht baubar): S1 0.033→0.137 (SCHLECHTER), S3 0.009→0.006,
+S4-rowB 0.086→0.075. Micro-Test synthetisch: chunk-split==full (1.5e-5),
+Chunk-Decomposition unschuldig; qkv-preconv exakt 0, Drift entsteht in
+Conv/GDN. Fazit: Split-Fehler kernel-abhängig, aber kein Kernel-Pfad führt
+zu Parity. Gate-Entscheidung nötig (Pfad meiden vs Floor-Toleranz), keine
+weitere Messung.
