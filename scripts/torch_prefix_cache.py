@@ -453,6 +453,24 @@ def _prepare_rendered_examples_once(engine, images, rendered_examples, *, fast=F
     return prepared
 
 
+def _chunk_specs_by_shared_length(specs, microbatch):
+    """Yield VRAM-bounded rows without mixing incompatible cache lengths."""
+    if microbatch < 1:
+        raise ValueError("microbatch must be positive")
+    buckets = {}
+    order = []
+    for spec in specs:
+        key = int(spec["question_shared"])
+        if key not in buckets:
+            buckets[key] = []
+            order.append(key)
+        buckets[key].append(spec)
+    for key in order:
+        rows = buckets[key]
+        for start in range(0, len(rows), microbatch):
+            yield key, rows[start : start + microbatch]
+
+
 def score_rendered_prefix_cached_hierarchical(
     engine,
     images,
@@ -541,15 +559,21 @@ def score_rendered_prefix_cached_hierarchical(
     global_cache = getattr(prefix_out, "past_key_values", None)
     if global_cache is None:
         raise RuntimeError("language model did not return past_key_values")
+    del prefix_out
 
-    logits_out = []
+    # Build one row per rotation, then batch rows across questions.  Keeping
+    # question_shared equal inside a physical batch preserves the exact cache
+    # length/GDN state shape while removing the old B=1 per-question launch
+    # pattern.
+    logits_out = [None] * len(rows)
     question_prefix_tokens = []
     raw_question_prefix_tokens = []
-    suffix_batches = 0
+    row_specs = []
+    flat_index = 0
     max_effective_tokens = shared
-    question_prefills = 0
+    logical_question_prefills = 0
 
-    for prepared in prepared_groups:
+    for question_index, prepared in enumerate(prepared_groups):
         group_rows = [item[2] for item in prepared]
         relative = [row[shared:] for row in group_rows]
         raw_question_shared = _longest_common_prefix(relative)
@@ -558,24 +582,64 @@ def score_rendered_prefix_cached_hierarchical(
         )
         raw_question_prefix_tokens.append(raw_question_shared)
         question_prefix_tokens.append(question_shared)
-
-        branch_cache = global_cache
-        branch_positions = prefix_positions
-        branch_length = shared
-
         if question_shared > 0:
-            segment_ids = group_rows[0][
+            logical_question_prefills += 1
+            question_segment = group_rows[0][
                 shared : shared + question_shared
             ].to(device)
-            segment_embeds = embed_tokens(segment_ids).unsqueeze(0)
+        else:
+            question_segment = None
+
+        for item, row in zip(prepared, group_rows):
+            suffix = row[shared + question_shared :].to(device)
+            suffix_length = int(suffix.numel())
+            if suffix_length < 1:
+                raise ValueError("every rotation must retain a non-empty suffix")
+            row_specs.append(
+                {
+                    "flat_index": flat_index,
+                    "question_index": question_index,
+                    "question_shared": question_shared,
+                    "question_segment": question_segment,
+                    "suffix_ids": suffix,
+                    "suffix_length": suffix_length,
+                    "prepared": item,
+                }
+            )
+            flat_index += 1
+
+    suffix_batches = 0
+    question_prefill_batches = 0
+    question_prefill_rows = 0
+
+    for question_shared, batch_specs in _chunk_specs_by_shared_length(
+        row_specs, microbatch
+    ):
+        batch_size = len(batch_specs)
+        batch_lengths = [spec["suffix_length"] for spec in batch_specs]
+        branch_length = shared + question_shared
+
+        # Important memory property: each expanded cache is single-use.  The old
+        # implementation first created a per-question cache and then deep-copied
+        # it again for rotations.  Here the question-prefix rows are already
+        # duplicated/batched for their final suffix rows; the returned cache can
+        # be consumed directly by the suffix call.
+        branch_cache = _repeat_cache(global_cache, batch_size)
+        branch_positions = prefix_positions
+        if question_shared > 0:
+            segment_ids = torch.stack(
+                [spec["question_segment"] for spec in batch_specs],
+                dim=0,
+            )
+            segment_embeds = embed_tokens(segment_ids)
             segment_positions = _suffix_positions(
                 prefix_positions,
-                [question_shared],
+                [question_shared] * batch_size,
                 question_shared,
                 device,
             )
-            attention_mask = torch.ones(
-                (1, shared + question_shared),
+            question_attention_mask = torch.ones(
+                (batch_size, branch_length),
                 device=device,
                 dtype=torch.long,
             )
@@ -583,107 +647,100 @@ def score_rendered_prefix_cached_hierarchical(
                 question_out = language(
                     inputs_embeds=segment_embeds,
                     position_ids=segment_positions,
-                    attention_mask=attention_mask,
-                    past_key_values=_repeat_cache(global_cache, 1),
+                    attention_mask=question_attention_mask,
+                    past_key_values=branch_cache,
                     use_cache=True,
                     return_dict=True,
                 )
             branch_cache = getattr(question_out, "past_key_values", None)
             if branch_cache is None:
                 raise RuntimeError(
-                    "question-prefix pass did not return past_key_values"
+                    "batched question-prefix pass did not return past_key_values"
                 )
             branch_positions = segment_positions
-            branch_length += question_shared
-            question_prefills += 1
+            question_prefill_batches += 1
+            question_prefill_rows += batch_size
+            del question_out, segment_embeds, segment_ids
 
-        suffix_ids = [
-            row[shared + question_shared :].to(device)
-            for row in group_rows
-        ]
-        suffix_lengths = [int(row.numel()) for row in suffix_ids]
-        if not suffix_lengths or min(suffix_lengths) < 1:
-            raise ValueError("every rotation must retain a non-empty suffix")
+        max_suffix = max(batch_lengths)
+        hidden_size = int(prefix_embeds.shape[-1])
+        suffix_embeds = torch.zeros(
+            (batch_size, max_suffix, hidden_size),
+            device=device,
+            dtype=prefix_embeds.dtype,
+        )
+        suffix_mask = torch.zeros(
+            (batch_size, max_suffix),
+            device=device,
+            dtype=torch.long,
+        )
+        for local_index, spec in enumerate(batch_specs):
+            count = spec["suffix_length"]
+            suffix_embeds[local_index, :count] = embed_tokens(
+                spec["suffix_ids"]
+            )
+            suffix_mask[local_index, :count] = 1
 
-        for batch_start in range(0, len(suffix_ids), microbatch):
-            batch_ids = suffix_ids[batch_start : batch_start + microbatch]
-            batch_prepared = prepared[
-                batch_start : batch_start + microbatch
-            ]
-            batch_lengths = suffix_lengths[
-                batch_start : batch_start + microbatch
-            ]
-            batch_size = len(batch_ids)
-            max_suffix = max(batch_lengths)
-            hidden_size = int(prefix_embeds.shape[-1])
+        attention_mask = torch.cat(
+            [
+                torch.ones(
+                    (batch_size, branch_length),
+                    device=device,
+                    dtype=torch.long,
+                ),
+                suffix_mask,
+            ],
+            dim=1,
+        )
+        position_ids = _suffix_positions(
+            branch_positions,
+            batch_lengths,
+            max_suffix,
+            device,
+        )
+        with torch.inference_mode():
+            output = language(
+                inputs_embeds=suffix_embeds,
+                position_ids=position_ids,
+                attention_mask=attention_mask,
+                past_key_values=branch_cache,
+                use_cache=False,
+                return_dict=True,
+            )
 
-            suffix_embeds = torch.zeros(
-                (batch_size, max_suffix, hidden_size),
-                device=device,
-                dtype=prefix_embeds.dtype,
+        states = output.last_hidden_state.float()
+        for local_index, spec in enumerate(batch_specs):
+            item = spec["prepared"]
+            token_ids = item[1]
+            hidden = _read_hidden(
+                states,
+                local_index,
+                spec["suffix_length"] - 1,
             )
-            suffix_mask = torch.zeros(
-                (batch_size, max_suffix),
-                device=device,
-                dtype=torch.long,
-            )
-            for local_index, ids in enumerate(batch_ids):
-                count = batch_lengths[local_index]
-                suffix_embeds[local_index, :count] = embed_tokens(ids)
-                suffix_mask[local_index, :count] = 1
-
-            attention_mask = torch.cat(
-                [
-                    torch.ones(
-                        (batch_size, branch_length),
-                        device=device,
-                        dtype=torch.long,
-                    ),
-                    suffix_mask,
-                ],
-                dim=1,
-            )
-            position_ids = _suffix_positions(
-                branch_positions,
-                batch_lengths,
-                max_suffix,
-                device,
-            )
-            with torch.inference_mode():
-                output = language(
-                    inputs_embeds=suffix_embeds,
-                    position_ids=position_ids,
-                    attention_mask=attention_mask,
-                    past_key_values=_repeat_cache(
-                        branch_cache,
-                        batch_size,
-                    ),
-                    use_cache=False,
-                    return_dict=True,
+            indices = engine._readout_indices(token_ids)
+            if engine.readout is not None and indices is not None:
+                logits = engine.readout(hidden)[indices]
+            else:
+                rows_tensor = torch.tensor(
+                    token_ids,
+                    device=device,
                 )
+                logits = hidden @ head[rows_tensor].float().T
+            logits_out[spec["flat_index"]] = logits
 
-            states = output.last_hidden_state.float()
-            for local_index, item in enumerate(batch_prepared):
-                token_ids = item[1]
-                hidden = _read_hidden(
-                    states, local_index, batch_lengths[local_index] - 1
-                )
-                indices = engine._readout_indices(token_ids)
-                if engine.readout is not None and indices is not None:
-                    logits = engine.readout(hidden)[indices]
-                else:
-                    rows_tensor = torch.tensor(
-                        token_ids,
-                        device=device,
-                    )
-                    logits = hidden @ head[rows_tensor].float().T
-                logits_out.append(logits)
-            suffix_batches += 1
-            max_effective_tokens = max(
-                max_effective_tokens,
-                branch_length + max_suffix,
-            )
+        suffix_batches += 1
+        max_effective_tokens = max(
+            max_effective_tokens,
+            branch_length + max_suffix,
+        )
+        # Suffix execution mutates cache objects even with use_cache=False.
+        # This branch is intentionally never reused.
+        del output, branch_cache, suffix_embeds
 
+    if any(item is None for item in logits_out):
+        raise RuntimeError("hierarchical prefix scheduler left logits unfilled")
+
+    physical_prefix_prefills = 1 + question_prefill_batches
     return logits_out, {
         "shared_prefix_tokens": shared,
         "raw_shared_prefix_tokens": raw_shared,
@@ -693,11 +750,15 @@ def score_rendered_prefix_cached_hierarchical(
         "vision_forwards": (
             1 if first_inputs.get("pixel_values") is not None else 0
         ),
-        "prefix_prefills": 1 + question_prefills,
-        "question_prefix_prefills": question_prefills,
+        "prefix_prefills": physical_prefix_prefills,
+        "question_prefix_prefills": logical_question_prefills,
+        "question_prefill_batches": question_prefill_batches,
+        "question_prefill_rows": question_prefill_rows,
         "suffix_batches": suffix_batches,
+        "lm_calls": physical_prefix_prefills + suffix_batches,
         "microbatch": microbatch,
         "prefix_cache": True,
+        "cross_question_batching": True,
         "image_processor_calls": 1 if images else 0,
         "reused_visual_tokenizations": max(0, len(rows) - 1),
         "max_effective_tokens": max_effective_tokens,

@@ -405,6 +405,37 @@ def test_prefix_visual_preparation_processes_image_once():
     assert len(prepared) == 3
     assert all(int((row[2] == Tokenizer.image_id).sum()) == 4 for row in prepared)
 
+
+def test_hierarchical_scheduler_batches_across_questions_by_cache_length():
+    from torch_prefix_cache import _chunk_specs_by_shared_length
+
+    specs = []
+    for question in range(5):
+        for rotation in range(4):
+            specs.append(
+                {
+                    "question_index": question,
+                    "rotation": rotation,
+                    "question_shared": 64,
+                }
+            )
+    # An incompatible cache length must be bucketed separately.
+    specs.extend(
+        [
+            {"question_index": 99, "rotation": 0, "question_shared": 0},
+            {"question_index": 99, "rotation": 1, "question_shared": 0},
+        ]
+    )
+
+    batches = list(_chunk_specs_by_shared_length(specs, 8))
+    assert [shared for shared, _ in batches] == [64, 64, 64, 0]
+    assert [len(rows) for _, rows in batches] == [8, 8, 4, 2]
+    assert all(len(rows) <= 8 for _, rows in batches)
+    # The important regression: a physical batch spans multiple logical
+    # questions instead of issuing one LM call per question.
+    assert len({row["question_index"] for row in batches[0][1]}) == 2
+
+
 def test_degenerate_hidden_falls_back_without_disabling():
     import torch
 
