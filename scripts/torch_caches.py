@@ -49,7 +49,8 @@ def artifact_namespace(bundle, adapter=None):
 
 
 def cache_context_digest(*, namespace, model, adapter, rotations, fast, merge_lora,
-                         shared_prefix, microbatch, prompt_layout, readout_codes, state, images):
+                         shared_prefix, microbatch, prompt_layout, readout_codes, state, images,
+                         prefix_suffix_bucket_width=0, prefix_question_batch=0):
     """Shared evidence context for one request: config, namespace, state, image bytes."""
     payload = {
         "cache_schema": RESULT_CACHE_SCHEMA,
@@ -61,6 +62,8 @@ def cache_context_digest(*, namespace, model, adapter, rotations, fast, merge_lo
         "merge_lora": bool(merge_lora),
         "shared_prefix": bool(shared_prefix),
         "question_microbatch": microbatch,
+        "prefix_suffix_bucket_width": int(prefix_suffix_bucket_width or 0),
+        "prefix_question_batch": int(prefix_question_batch or 0),
         "prompt_layout": prompt_layout,
         "readout_codes": readout_codes,
         "state": state,

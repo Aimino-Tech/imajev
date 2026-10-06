@@ -110,7 +110,8 @@ class TorchBackend:
 
     def __init__(self, bundle=BUNDLE, adapter=None, device=None, rotations=1, max_input_tokens=4096, readout_codes=None,
                  prompt_layout=None, fast=False, graph_lengths=None, merge_lora=False, float32=False,
-                 question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True):
+                 question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True,
+                 prefix_suffix_bucket_width=16, prefix_question_batch=0):
         from torch_caches import ResultCache, artifact_namespace
         from torch_prefix_cache import PrefixScorer
         import torch
@@ -159,7 +160,15 @@ class TorchBackend:
         self.merge_lora = bool(merge_lora) and adapter is not None
         self.question_microbatch = max(1, int(question_microbatch))
         self.shared_prefix_requested = bool(shared_prefix)
-        self._prefix_scorer = PrefixScorer(self.engine, fast=self.fast, microbatch=self.question_microbatch)
+        self.prefix_suffix_bucket_width = max(0, int(prefix_suffix_bucket_width or 0))
+        self.prefix_question_batch = max(0, int(prefix_question_batch or 0))
+        self._prefix_scorer = PrefixScorer(
+            self.engine,
+            fast=self.fast,
+            microbatch=self.question_microbatch,
+            suffix_bucket_width=self.prefix_suffix_bucket_width,
+            question_prefill_batch=self.prefix_question_batch,
+        )
         self._prefix_scorer.enabled = self.shared_prefix_requested
         self.result_cache_namespace = artifact_namespace(bundle, Path(adapter) if adapter is not None else None)
         from vision_decision.contracts import Result
@@ -187,6 +196,8 @@ class TorchBackend:
                                        merge_lora=getattr(self, "merge_lora", False),
                                        shared_prefix=getattr(self, "shared_prefix_requested", False),
                                        microbatch=getattr(self, "question_microbatch", 8),
+                                       prefix_suffix_bucket_width=getattr(self, "prefix_suffix_bucket_width", 0),
+                                       prefix_question_batch=getattr(self, "prefix_question_batch", 0),
                                        prompt_layout=getattr(self, "prompt_layout", None),
                                        readout_codes=getattr(self, "readout_codes", None),
                                        state=request.state, images=images)
@@ -403,7 +414,8 @@ def _warn_layout(trained, served):
 
 def build_backend(kind, adapter=None, no_adapter=False, bundle=BUNDLE, rotations=1, max_input_tokens=4096,
                   readout_codes=None, prompt_layout=None, fast=False, merge_lora=False, float32=False,
-                  question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True):
+                  question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True,
+                  prefix_suffix_bucket_width=16, prefix_question_batch=0):
     """`auto` prefers MLX with the converted adapter and falls back to torch + the PEFT adapter.
 
     readout_codes None / prompt_layout None follow the adapter (its readout rows; its decision_readout.json layout)."""
@@ -428,7 +440,9 @@ def build_backend(kind, adapter=None, no_adapter=False, bundle=BUNDLE, rotations
                             readout_codes=readout_codes, prompt_layout=prompt_layout, fast=fast, merge_lora=merge_lora,
                             float32=float32, question_microbatch=question_microbatch,
                             result_cache_size=result_cache_size, result_cache_path=result_cache_path,
-                            shared_prefix=shared_prefix)
+                            shared_prefix=shared_prefix,
+                            prefix_suffix_bucket_width=prefix_suffix_bucket_width,
+                            prefix_question_batch=prefix_question_batch)
     raise ValueError(f"Unknown backend {kind!r}")
 
 
@@ -595,6 +609,8 @@ def create_app(backend, examples=None, static=STATIC, calibration=None, thinking
                                                 getattr(__import__("vision_decision.jev_api", fromlist=["MAX_QUESTIONS"]),
                                                          "MAX_QUESTIONS"))),
             "question_microbatch": int(getattr(backend, "question_microbatch", 8)),
+            "prefix_suffix_bucket_width": int(getattr(backend, "prefix_suffix_bucket_width", 0)),
+            "prefix_question_batch": int(getattr(backend, "prefix_question_batch", 0)),
             "result_cache_size": int(getattr(cache, "capacity", 0)) if cache is not None else 0,
             "result_cache_persistent": bool(cache is not None and cache.persistent),
             "shared_prefix_requested": requested,
@@ -719,6 +735,10 @@ def main(argv=None):
                         help="torch only: Jev question ceiling for this server (at most 64)")
     parser.add_argument("--question-microbatch", type=int, default=8,
                         help="torch only: physical questions per batch chunk (bounded VRAM)")
+    parser.add_argument("--prefix-suffix-bucket-width", type=int, default=16,
+                        help="torch only: group shared-prefix suffixes by this token width (0 = preserve order)")
+    parser.add_argument("--prefix-question-batch", type=int, default=0,
+                        help="torch only: experimental decoupled question-prefix batch size (0 = conservative coupled scheduler)")
     parser.add_argument("--result-cache-size", type=int, default=4096,
                         help="torch only: exact per-question result cache entries (0 = off)")
     parser.add_argument("--result-cache-path", default=None,
@@ -736,6 +756,10 @@ def main(argv=None):
         parser.error("--question-microbatch must be in 1..logical-max-questions")
     if args.result_cache_size < 0 or args.result_cache_size > 100_000:
         parser.error("--result-cache-size must be in 0..100000")
+    if args.prefix_suffix_bucket_width < 0:
+        parser.error("--prefix-suffix-bucket-width must be >= 0")
+    if args.prefix_question_batch < 0 or args.prefix_question_batch > args.logical_max_questions:
+        parser.error("--prefix-question-batch must be in 0..logical-max-questions")
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     from vision_decision import jev_api
     jev_api.MAX_QUESTIONS = args.logical_max_questions
@@ -744,7 +768,9 @@ def main(argv=None):
                             prompt_layout=None if args.prompt_layout == "auto" else args.prompt_layout, fast=args.fast,
                             merge_lora=args.merge_lora, float32=args.float32,
                             question_microbatch=args.question_microbatch, result_cache_size=args.result_cache_size,
-                            result_cache_path=args.result_cache_path, shared_prefix=args.shared_prefix)
+                            result_cache_path=args.result_cache_path, shared_prefix=args.shared_prefix,
+                            prefix_suffix_bucket_width=args.prefix_suffix_bucket_width,
+                            prefix_question_batch=args.prefix_question_batch)
     backend.logical_max_questions = args.logical_max_questions
     if args.model_name:
         backend.model = args.model_name

@@ -354,6 +354,8 @@ def main(argv=None):
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--rotations", type=int, default=4)
     parser.add_argument("--microbatch", type=int, default=16)
+    parser.add_argument("--suffix-bucket-width", type=int, default=16)
+    parser.add_argument("--question-prefill-batch", type=int, default=0)
     parser.add_argument("--max-input-tokens", type=int, default=4096)
     parser.add_argument(
         "--no-graphs",
@@ -426,7 +428,11 @@ def _measure(eng, images, compiled, args, fast, graph_lengths, batch_call):
     for _ in range(args.warmups):
         batch_call()
         PrefixScorer(
-            eng, fast=fast, microbatch=args.microbatch
+            eng,
+            fast=fast,
+            microbatch=args.microbatch,
+            suffix_bucket_width=args.suffix_bucket_width,
+            question_prefill_batch=args.question_prefill_batch,
         ).score(images, compiled, args.rotations)
 
     # Canonical reference is deliberately separate from the main timing race.
@@ -445,11 +451,23 @@ def _measure(eng, images, compiled, args, fast, graph_lengths, batch_call):
         serial_samples.append(seconds)
         serial_peaks.append(peak)
 
-    raw_scorer = PrefixScorer(eng, fast=fast, microbatch=args.microbatch)
+    raw_scorer = PrefixScorer(
+        eng,
+        fast=fast,
+        microbatch=args.microbatch,
+        suffix_bucket_width=args.suffix_bucket_width,
+        question_prefill_batch=args.question_prefill_batch,
+    )
 
     # Validate a persistent scorer OUTSIDE the warm-production timer.  Two
     # same-type boolean questions are enough to exercise the real visual gate.
-    warm_scorer = PrefixScorer(eng, fast=fast, microbatch=args.microbatch)
+    warm_scorer = PrefixScorer(
+        eng,
+        fast=fast,
+        microbatch=args.microbatch,
+        suffix_bucket_width=args.suffix_bucket_width,
+        question_prefill_batch=args.question_prefill_batch,
+    )
     validation_fallback = ProductionFallback(
         eng, args.rotations, args.microbatch, fast
     )
@@ -484,7 +502,11 @@ def _measure(eng, images, compiled, args, fast, graph_lengths, batch_call):
                 )
             elif name == "cold-gate":
                 cold_scorer = PrefixScorer(
-                    eng, fast=fast, microbatch=args.microbatch
+                    eng,
+                    fast=fast,
+                    microbatch=args.microbatch,
+                    suffix_bucket_width=args.suffix_bucket_width,
+                    question_prefill_batch=args.question_prefill_batch,
                 )
                 fallback = ProductionFallback(
                     eng, args.rotations, args.microbatch, fast
@@ -514,6 +536,8 @@ def _measure(eng, images, compiled, args, fast, graph_lengths, batch_call):
     print(
         f"\nproduction benchmark: n={len(compiled)} rotations={args.rotations} "
         f"microbatch={args.microbatch} fast={fast} runs={args.runs} "
+        f"suffix_bucket={args.suffix_bucket_width} "
+        f"question_prefill_batch={args.question_prefill_batch} "
         f"cuda_graphs={graph_lengths}\n",
         flush=True,
     )

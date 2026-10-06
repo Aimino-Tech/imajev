@@ -501,6 +501,95 @@ def test_benchmark_summary_reports_median_and_interpolated_p95():
 
 
 
+
+def test_length_aware_question_packing_groups_similar_suffixes():
+    from torch_prefix_cache import _pack_question_specs_by_shared_length
+
+    lengths = [87, 45, 84, 48]
+    specs = [
+        {
+            "question_index": index,
+            "question_shared": 64,
+            "rows": [
+                {"suffix_length": length},
+                {"suffix_length": length},
+            ],
+        }
+        for index, length in enumerate(lengths)
+    ]
+    batches = list(
+        _pack_question_specs_by_shared_length(
+            specs, 4, suffix_bucket_width=8
+        )
+    )
+    maxima = [
+        [max(row["suffix_length"] for row in q["rows"]) for q in questions]
+        for _, questions in batches
+    ]
+    assert maxima == [[45, 48], [84, 87]]
+
+
+def test_select_cache_rows_does_not_mutate_source_linear_states():
+    import torch
+    from torch_prefix_cache import _select_cache_rows
+
+    class Layer:
+        def __init__(self):
+            self.keys = torch.arange(3.0).view(3, 1, 1, 1)
+            self.values = self.keys + 10
+            self.conv_states = {0: torch.arange(6.0).view(3, 1, 2)}
+            self.recurrent_states = {0: torch.arange(3.0).view(3, 1, 1, 1)}
+
+        def reorder_cache(self, indices):
+            self.keys = self.keys.index_select(0, indices)
+            self.values = self.values.index_select(0, indices)
+            self.conv_states[0] = self.conv_states[0].index_select(0, indices)
+            self.recurrent_states[0] = self.recurrent_states[0].index_select(0, indices)
+
+    class Cache:
+        def __init__(self):
+            self.layers = [Layer()]
+
+        def reorder_cache(self, indices):
+            for layer in self.layers:
+                layer.reorder_cache(indices)
+
+    source = Cache()
+    before = source.layers[0].conv_states[0].clone()
+    branch = _select_cache_rows(source, torch.tensor([2, 0, 2]))
+
+    assert torch.equal(branch.layers[0].keys[:, 0, 0, 0], torch.tensor([2.0, 0.0, 2.0]))
+    assert torch.equal(source.layers[0].conv_states[0], before)
+    assert source.layers[0].keys.shape[0] == 3
+
+
+def test_result_cache_context_changes_with_prefix_scheduler_knobs():
+    from torch_caches import cache_context_digest
+
+    common = dict(
+        namespace="n",
+        model="m",
+        adapter=None,
+        rotations=4,
+        fast=True,
+        merge_lora=False,
+        shared_prefix=True,
+        microbatch=16,
+        prompt_layout="standard",
+        readout_codes=255,
+        state={"x": 1},
+        images=[],
+    )
+    base = cache_context_digest(**common)
+    bucket = cache_context_digest(**common, prefix_suffix_bucket_width=16)
+    qbatch = cache_context_digest(**common, prefix_question_batch=8)
+
+    assert base != bucket
+    assert base != qbatch
+    assert bucket != qbatch
+
+
+
 def test_degenerate_hidden_falls_back_without_disabling():
     import torch
 
