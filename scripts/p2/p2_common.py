@@ -339,7 +339,8 @@ def jevbench_public_files() -> list[Path]:
 
 
 def doc_id(domain_id: str, seed: int) -> str:
-    return f"{domain_id}-{hashlib.sha256(f'p2\0{domain_id}\0{seed}'.encode()).hexdigest()[:12]}"
+    payload = f"p2\0{domain_id}\0{seed}".encode()
+    return f"{domain_id}-{hashlib.sha256(payload).hexdigest()[:12]}"
 
 
 def read_jsonl(path: Path) -> list[dict]:
