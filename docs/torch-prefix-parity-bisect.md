@@ -182,3 +182,8 @@ kein neuer Flip, serial nicht schlechter, p50-Gewinn ~10% aus Sweep-In-Run
 (4.30 vs 4.85, Messung 16:x — Showdown lief nur bucket=8 ohne eigene B0-
 Kontrolle), VRAM 10.13GiB im Budget. Bucket=8 → Server-Default promoten
 (upstream 95df316, volle Promotion alle Defaults).
+
+Messung 21:x (Bucket=4 x QBatch-Kreuz, mb16): alle qbatch>0 flippen auch bei
+bucket=4 (34/35, langsamer: 4.5-4.7s). qbatch=0 bleibt (4.34s, 35/35).
+Sweep-Raum erschöpft: bucket 0/4/8/16/24/32, mb 16/24/32, qbatch 0/4/8/12/16/35
+bei bucket=4+8. Gewinner: mb16/bucket=8/qbatch=0 (Server-Default).
