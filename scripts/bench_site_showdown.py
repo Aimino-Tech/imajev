@@ -234,13 +234,20 @@ def production_batch_score(
     fast,
 ):
     """Mirror TorchBackend._score_serial_bounded + _score_serial_batch."""
+    max_rots = max(
+        len(cyclic_offsets(len(choices), rotations))
+        for _, _, choices, _, _ in compiled
+    )
+    # VRAM scales with questions x rotations per forward: keep the physical
+    # batch at microbatch rows regardless of rotation count.
+    chunk = max(1, microbatch // max(1, max_rots))
     out = []
-    for start in range(0, len(compiled), microbatch):
+    for start in range(0, len(compiled), chunk):
         out.extend(
             _production_batch_chunk(
                 eng,
                 images,
-                compiled[start : start + microbatch],
+                compiled[start : start + chunk],
                 rotations,
                 fast=fast,
             )
@@ -370,15 +377,15 @@ def main(argv=None):
         dtype=torch.bfloat16,
         max_length=args.max_input_tokens,
     )
-    graph_lengths = []
+    print(f"[vram] after load: {torch.cuda.memory_allocated() / 1e9:.2f}GB", flush=True)
     if fast and not args.no_graphs:
-        lengths = [
-            length
-            for length in GRAPH_LENGTHS
-            if length <= args.max_input_tokens
-        ]
+        # Same 5 short lengths as the serving fast bench: 16 capture lengths
+        # reserve ~4 GB and OOM the warmup batch on 16 GiB GPUs.
+        lengths = [256, 384, 512, 768, 1024]
         try:
             graph_lengths = eng.capture_graphs(lengths).lengths
+            print(f"[vram] after graph capture: "
+                  f"{torch.cuda.memory_allocated() / 1e9:.2f}GB", flush=True)
         except Exception as exc:
             # Same serving contract as TorchBackend: eager path is the fallback.
             print(
@@ -401,6 +408,14 @@ def main(argv=None):
         fast=fast,
     )
 
+    # No autograd anywhere: without inference_mode every forward keeps its
+    # graph alive and OOMs the run after a few dozen rotations.
+    with torch.inference_mode():
+        _measure(eng, images, compiled, args, fast, graph_lengths, batch_call)
+
+
+def _measure(eng, images, compiled, args, fast, graph_lengths, batch_call):
+    """Warmup + timing race, all under the caller's inference_mode."""
     # Warm representative full shapes before measurement.  No result cache is
     # involved anywhere in this benchmark.
     for _ in range(args.warmups):
