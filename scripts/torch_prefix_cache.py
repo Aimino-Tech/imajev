@@ -20,8 +20,10 @@ import copy
 from time import perf_counter
 
 import torch
-
 PARITY_ATOL = 0.02
+# ponytail: floor value uncalibrated (bisect range 0.03-0.14); calibrate on
+# rotation-margin distribution when gate data exists.
+MARGIN_FLOOR = 0.15
 
 class PrefixUnsuitable(Exception):
     """Batch cannot use prefix reuse (no shared prefix, no validatable pair,
@@ -702,7 +704,9 @@ class PrefixScorer:
     The backend renders (prompt, labels) groups and calls score(); the serial
     scorer stays the fallback. The first eligible batch per evidence mode
     (text vs visual) is double-scored against the serial path; the prefix path
-    enables only on identical argmax AND max abs logit delta <= PARITY_ATOL.
+    enables on identical argmax (logit delta is a measured numeric floor,
+    not a correctness signal). Per batch, questions with top1-top2 margin
+    below MARGIN_FLOOR fall back to serial rescoring without disabling.
     """
 
     def __init__(self, engine, *, fast=False, microbatch=8):
@@ -772,6 +776,14 @@ class PrefixScorer:
                        else combine_rotations(choices, [(o, v) for o, v in passes]))
         self.engine._batch_seconds = perf_counter() - start
         return out
+    @staticmethod
+    def _min_margin(results):
+        """Smallest top1-top2 softmax gap over per-question results."""
+        floor = 1.0
+        for result in results:
+            ordered = sorted(result.scores.values(), reverse=True)
+            floor = min(floor, ordered[0] - ordered[1] if len(ordered) > 1 else 0.0)
+        return floor
 
     def maybe_validate_and_score(self, images, compiled, rotations, fallback):
         """Prefix path with parity gate; falls back to `fallback` on any doubt.
@@ -796,10 +808,14 @@ class PrefixScorer:
                 probe, probe_examples = groups, [item for group in groups for item in group]
                 candidate, _ = score_rendered_prefix_cached_hierarchical(
                     self.engine, images, probe, fast=self.fast, microbatch=self.microbatch)
-                matches, delta = _logits_match(candidate, self.reference_logits(images, probe_examples))
+                reference = self.reference_logits(images, probe_examples)
+                _, delta = _logits_match(candidate, reference)
                 self.max_delta[mode] = delta
-                if not matches:
-                    raise ParityError(f"parity mismatch: max_delta={delta:.6f} tolerance={PARITY_ATOL:.6f}")
+                # Logit parity is a measured numeric floor (bisect 0.03-0.14),
+                # not a correctness signal: gate on identical argmax only.
+                for cand, ref in zip(candidate, reference):
+                    if int(cand.argmax()) != int(ref.argmax()):
+                        raise ParityError(f"argmax mismatch at delta={delta:.6f}")
                 if mode == "visual":
                     self.validated_visual = True
                 else:
@@ -807,6 +823,12 @@ class PrefixScorer:
             out = self.score(images, compiled, rotations)
             self.metadata["validated_mode"] = mode
             self.metadata["parity_max_delta"] = self.max_delta.get(mode)
+            margin = self._min_margin(out)
+            self.metadata["min_margin"] = margin
+            # Close call: numeric drift could flip the vote -> serial rescore.
+            if margin < MARGIN_FLOOR:
+                self.metadata["margin_fallback"] = True
+                return fallback(images, compiled)
             return out
         except PrefixUnsuitable:
             return fallback(images, compiled)

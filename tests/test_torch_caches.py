@@ -282,10 +282,50 @@ def test_probe_pair_needs_same_type():
     real = prefix_cache.score_rendered_prefix_cached_hierarchical
     prefix_cache.score_rendered_prefix_cached_hierarchical = (
         lambda *a, **k: ([torch.tensor([1.0, 0.0]), torch.tensor([1.0, 0.0])], {}))
+    from vision_decision.scoring import result_from_logits
+    choices = [("A", "a"), ("B", "b"), ("__unknown__", "u")]
+    clear = [result_from_logits(choices, [3.0, 0.0, -10.0])]
+    close = [result_from_logits(choices, [0.05, 0.0, -10.0])]
     try:
-        scorer.score = lambda images, compiled, rotations: "scored"
-        assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == "scored"
-        assert scorer.validated_text
+        scorer.score = lambda images, compiled, rotations: clear
+        assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == clear
+        assert scorer.validated_text and scorer.enabled
+        assert scorer.metadata["min_margin"] > 0.15
+        # Close call -> serial fallback, path stays enabled.
+        scorer.score = lambda images, compiled, rotations: close
+        assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == "fallback"
+        assert scorer.enabled and scorer.metadata["margin_fallback"]
+    finally:
+        prefix_cache.score_rendered_prefix_cached_hierarchical = real
+
+
+def test_argmax_mismatch_disables_prefix_path():
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import PrefixScorer
+
+    def field(kind):
+        return SimpleNamespace(type=kind)
+
+    same = [(field("boolean"), None, None, None, None), (field("boolean"), None, None, None, None)]
+    scorer = PrefixScorer.__new__(PrefixScorer)
+    scorer.enabled, scorer.validated_text, scorer.validated_visual = True, False, False
+    scorer.max_delta, scorer.error, scorer.metadata = {}, None, {}
+    scorer.engine = SimpleNamespace(device="cpu")
+    scorer.fast, scorer.microbatch = False, 8
+    import torch
+
+    scorer.render_groups = lambda images, compiled, rotations: ([[(("r", [1]),)], [(("r", [1]),)]], None)
+    scorer.reference_logits = lambda images, examples: [torch.tensor([0.0, 1.0]), torch.tensor([0.0, 1.0])]
+    import torch_prefix_cache as prefix_cache
+
+    real = prefix_cache.score_rendered_prefix_cached_hierarchical
+    prefix_cache.score_rendered_prefix_cached_hierarchical = (
+        lambda *a, **k: ([torch.tensor([1.0, 0.0]), torch.tensor([1.0, 0.0])], {}))
+    try:
+        out = scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback")
+        assert out == "fallback" and not scorer.enabled
+        assert "argmax" in scorer.error
     finally:
         prefix_cache.score_rendered_prefix_cached_hierarchical = real
 
