@@ -23,6 +23,14 @@ import torch
 
 PARITY_ATOL = 0.02
 
+class PrefixUnsuitable(Exception):
+    """Batch cannot use prefix reuse (no shared prefix, no validatable pair,
+    degenerate model output). Fall back WITHOUT disabling the path."""
+
+
+class ParityError(Exception):
+    """Prefix path produced wrong logits. Disables the path."""
+
 
 def _unpadded_ids(inputs):
     ids = inputs["input_ids"]
@@ -194,7 +202,7 @@ def score_rendered_prefix_cached(
 
     shared = _longest_common_prefix(rows)
     if shared < 1:
-        raise ValueError("prompts have no reusable token prefix")
+        raise PrefixUnsuitable("prompts have no reusable token prefix")
 
     visual_ids = _visual_token_ids(engine)
     if visual_ids:
@@ -305,10 +313,9 @@ def score_rendered_prefix_cached(
             range(batch_start, batch_start + batch_size)
         ):
             token_ids = prepared[global_index][1]
-            hidden = states[
-                local_index,
-                batch_lengths[local_index] - 1,
-            ]
+            hidden = _read_hidden(
+                states, local_index, batch_lengths[local_index] - 1
+            )
             indices = engine._readout_indices(token_ids)
             if engine.readout is not None and indices is not None:
                 logits = engine.readout(hidden)[indices]
@@ -394,7 +401,7 @@ def score_rendered_prefix_cached_hierarchical(
 
     shared = _longest_common_prefix(rows)
     if shared < 1:
-        raise ValueError("prompts have no reusable global token prefix")
+        raise PrefixUnsuitable("prompts have no reusable global token prefix")
 
     visual_ids = _visual_token_ids(engine)
     if visual_ids:
@@ -554,10 +561,9 @@ def score_rendered_prefix_cached_hierarchical(
             states = output.last_hidden_state.float()
             for local_index, item in enumerate(batch_prepared):
                 token_ids = item[1]
-                hidden = states[
-                    local_index,
-                    batch_lengths[local_index] - 1,
-                ]
+                hidden = _read_hidden(
+                    states, local_index, batch_lengths[local_index] - 1
+                )
                 indices = engine._readout_indices(token_ids)
                 if engine.readout is not None and indices is not None:
                     logits = engine.readout(hidden)[indices]
@@ -587,6 +593,36 @@ def score_rendered_prefix_cached_hierarchical(
         "prefix_cache": True,
         "max_effective_tokens": max_effective_tokens,
     }
+
+
+def _select_probe_pair(compiled):
+    """Indices of two same-type questions, or None if no validatable pair.
+
+    Cross-type pairs (e.g. noul + choice) share no prompt prefix, so probing
+    them proves nothing; the batch falls back and the path stays enabled."""
+    by_type = {}
+    for i, row in enumerate(compiled):
+        by_type.setdefault(getattr(row[0], "type", None), []).append(i)
+    for idx in by_type.values():
+        if len(idx) >= 2:
+            return idx[0], idx[1]
+    return None
+
+
+def _read_hidden(states, local_index, pos):
+    """Decision hidden state with a loud failure on degenerate model output.
+
+    A 0D `states` (collapsed batch dim upstream) cannot be indexed at all, so
+    guard before indexing; raise PrefixUnsuitable so the gate falls back
+    cleanly instead of exploding inside F.linear."""
+    if states.dim() == 0:
+        raise PrefixUnsuitable("degenerate 0D model output; falling back")
+    hidden = states[local_index, pos]
+    if hidden.dim() < 1:
+        raise PrefixUnsuitable(
+            f"degenerate hidden state dim={hidden.dim()}; falling back"
+        )
+    return hidden
 
 
 def _logits_match(candidate, reference, *, atol=PARITY_ATOL):
@@ -681,7 +717,11 @@ class PrefixScorer:
         return out
 
     def maybe_validate_and_score(self, images, compiled, rotations, fallback):
-        """Prefix path with parity gate; falls back to `fallback` on any doubt."""
+        """Prefix path with parity gate; falls back to `fallback` on any doubt.
+
+        Unsuitable batches (no shared prefix, no validatable same-type pair,
+        degenerate model output) fall back WITHOUT disabling the path; only
+        genuine parity mismatches and unexpected errors disable it."""
         if not self.enabled or len(compiled) < 2:
             return fallback(images, compiled)
         mode = "visual" if images else "text"
@@ -689,14 +729,20 @@ class PrefixScorer:
             if (mode == "visual" and not self.validated_visual) or (mode == "text" and not self.validated_text):
                 # Validate the hierarchical branch itself (rotations included); a
                 # flat-prefix check would not prove the per-question KV branch.
-                groups, _ = self.render_groups(images, compiled[:2], rotations)
+                # Cross-type pairs share no prefix, so only same-type pairs prove
+                # the mechanics; without one, fall back and stay enabled.
+                pair = _select_probe_pair(compiled)
+                if pair is None:
+                    return fallback(images, compiled)
+                first, second = pair
+                groups, _ = self.render_groups(images, [compiled[first], compiled[second]], rotations)
                 probe, probe_examples = groups, [item for group in groups for item in group]
                 candidate, _ = score_rendered_prefix_cached_hierarchical(
                     self.engine, images, probe, fast=self.fast, microbatch=self.microbatch)
                 matches, delta = _logits_match(candidate, self.reference_logits(images, probe_examples))
                 self.max_delta[mode] = delta
                 if not matches:
-                    raise ValueError(f"parity mismatch: max_delta={delta:.6f} tolerance={PARITY_ATOL:.6f}")
+                    raise ParityError(f"parity mismatch: max_delta={delta:.6f} tolerance={PARITY_ATOL:.6f}")
                 if mode == "visual":
                     self.validated_visual = True
                 else:
@@ -705,6 +751,8 @@ class PrefixScorer:
             self.metadata["validated_mode"] = mode
             self.metadata["parity_max_delta"] = self.max_delta.get(mode)
             return out
+        except PrefixUnsuitable:
+            return fallback(images, compiled)
         except Exception as exc:
             self.enabled = False
             self.error = f"{type(exc).__name__}: {exc}"

@@ -152,7 +152,7 @@ class TorchDecision:
   embeds,positions=self._embeds_positions(inputs);graphs=self.__dict__.get('graphs')
   # Graphs are captured at batch 1; replay with B>1 would silently score row 0.
   if graphs is not None and embeds.shape[0] == 1 and graphs.fits(embeds.shape[1]):
-   hidden=graphs.run(embeds,positions).float()
+   hidden=graphs.run(embeds,positions).float().unsqueeze(0)
    base=self._base();head=base.lm_head.weight
    return [self.readout(hidden[i])[self._readout_indices(ids)] if self.readout is not None and self._readout_indices(ids) is not None else hidden[i]@head[torch.tensor(ids,device=self.device)].float().T for i,ids in enumerate(token_ids)]
   base=self._base()

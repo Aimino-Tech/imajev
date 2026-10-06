@@ -233,9 +233,10 @@ class TorchBackend:
                 results = self._score_batched(images, compiled)
                 tokens = max(tokens, self._last_batch_tokens)
             except Exception:
-                log.exception("batched torch scoring failed; falling back to serial")
+                log.exception("batched torch scoring failed; retrying per question")
                 use_batch = False
                 results = []
+                self._batch_seconds = 0.0
         if not use_batch:
             for field, header, choices, texts, labels in compiled:
                 start = perf_counter()

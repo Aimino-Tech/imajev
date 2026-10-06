@@ -253,3 +253,52 @@ def test_microbatching_keeps_large_logical_panel_bounded():
 
     assert backend._score_batched([], list(range(21))) == list(range(21))
     assert backend.batch_calls == [8, 8, 5]
+
+
+def test_probe_pair_needs_same_type():
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import PrefixScorer, PrefixUnsuitable
+
+    def field(kind):
+        return SimpleNamespace(type=kind)
+
+    mixed = [(field("boolean"), None, None, None, None), (field("choice"), None, None, None, None)]
+    scorer = PrefixScorer.__new__(PrefixScorer)
+    scorer.enabled, scorer.validated_text, scorer.validated_visual = True, False, False
+    scorer.max_delta, scorer.error, scorer.metadata = {}, None, {}
+    scorer.engine = SimpleNamespace(device="cpu")
+    scorer.fast, scorer.microbatch = False, 8
+    calls = []
+    out = scorer.maybe_validate_and_score(None, mixed, 1, lambda images, compiled: calls.append("fallback") or "ok")
+    assert out == "ok" and calls == ["fallback"] and scorer.enabled
+    same = [(field("boolean"), None, None, None, None), (field("boolean"), None, None, None, None)]
+    import torch
+
+    scorer.render_groups = lambda images, compiled, rotations: ([[(("r", [1]),)], [(("r", [1]),)]], None)
+    scorer.reference_logits = lambda images, examples: [torch.tensor([1.0, 0.0]), torch.tensor([1.0, 0.0])]
+    import torch_prefix_cache as prefix_cache
+
+    real = prefix_cache.score_rendered_prefix_cached_hierarchical
+    prefix_cache.score_rendered_prefix_cached_hierarchical = (
+        lambda *a, **k: ([torch.tensor([1.0, 0.0]), torch.tensor([1.0, 0.0])], {}))
+    try:
+        scorer.score = lambda images, compiled, rotations: "scored"
+        assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == "scored"
+        assert scorer.validated_text
+    finally:
+        prefix_cache.score_rendered_prefix_cached_hierarchical = real
+
+
+
+def test_degenerate_hidden_falls_back_without_disabling():
+    import torch
+
+    from torch_prefix_cache import PrefixScorer, PrefixUnsuitable, _read_hidden
+
+    try:
+        _read_hidden(torch.zeros(()), 0, 0)
+    except PrefixUnsuitable:
+        pass
+    else:
+        raise AssertionError("0D hidden must raise PrefixUnsuitable")
