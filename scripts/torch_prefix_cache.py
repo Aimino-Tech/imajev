@@ -1175,8 +1175,8 @@ class PrefixScorer:
             groups,
             fast=self.fast,
             microbatch=self.microbatch,
-            suffix_bucket_width=self.suffix_bucket_width,
-            question_prefill_batch=self.question_prefill_batch,
+            suffix_bucket_width=getattr(self, "suffix_bucket_width", 16),
+            question_prefill_batch=getattr(self, "question_prefill_batch", 0),
         )
         per_q = [[] for _ in compiled]
         for (qi, offset), tensor in zip(owners, logits):
@@ -1227,8 +1227,8 @@ class PrefixScorer:
                     probe,
                     fast=self.fast,
                     microbatch=self.microbatch,
-                    suffix_bucket_width=self.suffix_bucket_width,
-                    question_prefill_batch=self.question_prefill_batch,
+                    suffix_bucket_width=getattr(self, "suffix_bucket_width", 16),
+                    question_prefill_batch=getattr(self, "question_prefill_batch", 0),
                 )
                 reference = self.reference_logits(images, probe_examples)
                 _, delta = _logits_match(candidate, reference)
