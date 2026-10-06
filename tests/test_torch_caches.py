@@ -291,10 +291,11 @@ def test_probe_pair_needs_same_type():
         assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == clear
         assert scorer.validated_text and scorer.enabled
         assert scorer.metadata["min_margin"] > 0.15
-        # Close call -> serial fallback, path stays enabled.
+        # Close call -> only that question rescored serially, path stays enabled.
         scorer.score = lambda images, compiled, rotations: close
-        assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == "fallback"
-        assert scorer.enabled and scorer.metadata["margin_fallback"]
+        rescored = [result_from_logits(choices, [0.06, 0.0, -10.0])]
+        got = scorer.maybe_validate_and_score(None, same, 1, lambda images, comp: rescored)
+        assert got == rescored and scorer.enabled and scorer.metadata["margin_fallback"] == [0]
     finally:
         prefix_cache.score_rendered_prefix_cached_hierarchical = real
 

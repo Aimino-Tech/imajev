@@ -825,10 +825,13 @@ class PrefixScorer:
             self.metadata["parity_max_delta"] = self.max_delta.get(mode)
             margin = self._min_margin(out)
             self.metadata["min_margin"] = margin
-            # Close call: numeric drift could flip the vote -> serial rescore.
-            if margin < MARGIN_FLOOR:
-                self.metadata["margin_fallback"] = True
-                return fallback(images, compiled)
+            # Close calls only: rescore tight questions serially, keep clear ones.
+            tight = [i for i, r in enumerate(out) if self._min_margin([r]) < MARGIN_FLOOR]
+            if tight:
+                self.metadata["margin_fallback"] = tight
+                rescored = fallback(images, [compiled[i] for i in tight])
+                for i, r in zip(tight, rescored):
+                    out[i] = r
             return out
         except PrefixUnsuitable:
             return fallback(images, compiled)
