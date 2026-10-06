@@ -453,8 +453,14 @@ def _prepare_rendered_examples_once(engine, images, rendered_examples, *, fast=F
     return prepared
 
 
-def _chunk_specs_by_shared_length(specs, microbatch):
-    """Yield VRAM-bounded rows without mixing incompatible cache lengths."""
+def _pack_question_specs_by_shared_length(specs, microbatch):
+    """Pack whole questions while bounding the expanded rotation batch.
+
+    Questions can share one physical question-prefix call only when their
+    question-prefix cache length matches.  The sum of their rotation rows is
+    bounded by microbatch so the in-place cache expansion never exceeds the
+    serving VRAM limit.
+    """
     if microbatch < 1:
         raise ValueError("microbatch must be positive")
     buckets = {}
@@ -464,11 +470,30 @@ def _chunk_specs_by_shared_length(specs, microbatch):
         if key not in buckets:
             buckets[key] = []
             order.append(key)
-        buckets[key].append(spec)
+        rows = spec["rows"]
+        if len(rows) <= microbatch:
+            buckets[key].append(spec)
+        else:
+            # Defensive path for microbatch smaller than a question's rotation
+            # count.  Re-prefilling that one question is preferable to OOM.
+            for start in range(0, len(rows), microbatch):
+                part = dict(spec)
+                part["rows"] = rows[start : start + microbatch]
+                buckets[key].append(part)
+
     for key in order:
-        rows = buckets[key]
-        for start in range(0, len(rows), microbatch):
-            yield key, rows[start : start + microbatch]
+        packed = []
+        expanded_rows = 0
+        for spec in buckets[key]:
+            count = len(spec["rows"])
+            if packed and expanded_rows + count > microbatch:
+                yield key, packed
+                packed = []
+                expanded_rows = 0
+            packed.append(spec)
+            expanded_rows += count
+        if packed:
+            yield key, packed
 
 
 def score_rendered_prefix_cached_hierarchical(
@@ -561,14 +586,15 @@ def score_rendered_prefix_cached_hierarchical(
         raise RuntimeError("language model did not return past_key_values")
     del prefix_out
 
-    # Build one row per rotation, then batch rows across questions.  Keeping
-    # question_shared equal inside a physical batch preserves the exact cache
-    # length/GDN state shape while removing the old B=1 per-question launch
-    # pattern.
+    # Build one spec per logical question.  Question-prefixes are computed once
+    # per question in a packed batch, then that cache is expanded IN PLACE to
+    # the question's 2/4 rotation rows and consumed immediately by one suffix
+    # batch.  This avoids both the old ~35 B=1 prefills and the huge extra
+    # deepcopy that made wider cache branching OOM.
     logits_out = [None] * len(rows)
     question_prefix_tokens = []
     raw_question_prefix_tokens = []
-    row_specs = []
+    question_specs = []
     flat_index = 0
     max_effective_tokens = shared
     logical_question_prefills = 0
@@ -590,56 +616,62 @@ def score_rendered_prefix_cached_hierarchical(
         else:
             question_segment = None
 
+        rotation_rows = []
         for item, row in zip(prepared, group_rows):
             suffix = row[shared + question_shared :].to(device)
             suffix_length = int(suffix.numel())
             if suffix_length < 1:
                 raise ValueError("every rotation must retain a non-empty suffix")
-            row_specs.append(
+            rotation_rows.append(
                 {
                     "flat_index": flat_index,
-                    "question_index": question_index,
-                    "question_shared": question_shared,
-                    "question_segment": question_segment,
                     "suffix_ids": suffix,
                     "suffix_length": suffix_length,
                     "prepared": item,
                 }
             )
             flat_index += 1
+        question_specs.append(
+            {
+                "question_index": question_index,
+                "question_shared": question_shared,
+                "question_segment": question_segment,
+                "rows": rotation_rows,
+            }
+        )
 
     suffix_batches = 0
     question_prefill_batches = 0
     question_prefill_rows = 0
 
-    for question_shared, batch_specs in _chunk_specs_by_shared_length(
-        row_specs, microbatch
+    for question_shared, batch_questions in _pack_question_specs_by_shared_length(
+        question_specs, microbatch
     ):
-        batch_size = len(batch_specs)
-        batch_lengths = [spec["suffix_length"] for spec in batch_specs]
+        suffix_rows = [
+            row
+            for question in batch_questions
+            for row in question["rows"]
+        ]
+        batch_size = len(suffix_rows)
+        batch_lengths = [row["suffix_length"] for row in suffix_rows]
         branch_length = shared + question_shared
 
-        # Important memory property: each expanded cache is single-use.  The old
-        # implementation first created a per-question cache and then deep-copied
-        # it again for rotations.  Here the question-prefix rows are already
-        # duplicated/batched for their final suffix rows; the returned cache can
-        # be consumed directly by the suffix call.
-        branch_cache = _repeat_cache(global_cache, batch_size)
-        branch_positions = prefix_positions
         if question_shared > 0:
+            question_batch = len(batch_questions)
+            branch_cache = _repeat_cache(global_cache, question_batch)
             segment_ids = torch.stack(
-                [spec["question_segment"] for spec in batch_specs],
+                [question["question_segment"] for question in batch_questions],
                 dim=0,
             )
             segment_embeds = embed_tokens(segment_ids)
             segment_positions = _suffix_positions(
                 prefix_positions,
-                [question_shared] * batch_size,
+                [question_shared] * question_batch,
                 question_shared,
                 device,
             )
             question_attention_mask = torch.ones(
-                (batch_size, branch_length),
+                (question_batch, branch_length),
                 device=device,
                 dtype=torch.long,
             )
@@ -657,10 +689,39 @@ def score_rendered_prefix_cached_hierarchical(
                 raise RuntimeError(
                     "batched question-prefix pass did not return past_key_values"
                 )
-            branch_positions = segment_positions
+
+            # Expand B=questions -> B=rotation rows without deepcopy.  HF Cache
+            # reorder_cache uses index_select for both full-attention K/V and
+            # linear-attention conv/recurrent states, and duplicate indices are
+            # valid.  The expanded cache is single-use, so the source rows are
+            # no longer needed after this operation.
+            owner_indices = []
+            for local_question, question in enumerate(batch_questions):
+                owner_indices.extend(
+                    [local_question] * len(question["rows"])
+                )
+            owner_indices = torch.tensor(
+                owner_indices,
+                device=device,
+                dtype=torch.long,
+            )
+            reorder = getattr(branch_cache, "reorder_cache", None)
+            if not callable(reorder):
+                raise PrefixUnsuitable(
+                    "cache does not support in-place row expansion"
+                )
+            reorder(owner_indices)
+            branch_positions = segment_positions.index_select(
+                1, owner_indices
+            )
             question_prefill_batches += 1
-            question_prefill_rows += batch_size
+            question_prefill_rows += question_batch
             del question_out, segment_embeds, segment_ids
+        else:
+            # No question-specific cache exists; branch the global prefix
+            # directly to the final suffix batch.
+            branch_cache = _repeat_cache(global_cache, batch_size)
+            branch_positions = prefix_positions
 
         max_suffix = max(batch_lengths)
         hidden_size = int(prefix_embeds.shape[-1])
@@ -674,10 +735,10 @@ def score_rendered_prefix_cached_hierarchical(
             device=device,
             dtype=torch.long,
         )
-        for local_index, spec in enumerate(batch_specs):
-            count = spec["suffix_length"]
+        for local_index, row in enumerate(suffix_rows):
+            count = row["suffix_length"]
             suffix_embeds[local_index, :count] = embed_tokens(
-                spec["suffix_ids"]
+                row["suffix_ids"]
             )
             suffix_mask[local_index, :count] = 1
 
@@ -709,13 +770,13 @@ def score_rendered_prefix_cached_hierarchical(
             )
 
         states = output.last_hidden_state.float()
-        for local_index, spec in enumerate(batch_specs):
-            item = spec["prepared"]
+        for local_index, row in enumerate(suffix_rows):
+            item = row["prepared"]
             token_ids = item[1]
             hidden = _read_hidden(
                 states,
                 local_index,
-                spec["suffix_length"] - 1,
+                row["suffix_length"] - 1,
             )
             indices = engine._readout_indices(token_ids)
             if engine.readout is not None and indices is not None:
@@ -726,7 +787,7 @@ def score_rendered_prefix_cached_hierarchical(
                     device=device,
                 )
                 logits = hidden @ head[rows_tensor].float().T
-            logits_out[spec["flat_index"]] = logits
+            logits_out[row["flat_index"]] = logits
 
         suffix_batches += 1
         max_effective_tokens = max(
@@ -734,7 +795,7 @@ def score_rendered_prefix_cached_hierarchical(
             branch_length + max_suffix,
         )
         # Suffix execution mutates cache objects even with use_cache=False.
-        # This branch is intentionally never reused.
+        # Every expanded branch is intentionally consumed exactly once.
         del output, branch_cache, suffix_embeds
 
     if any(item is None for item in logits_out):
@@ -759,6 +820,7 @@ def score_rendered_prefix_cached_hierarchical(
         "microbatch": microbatch,
         "prefix_cache": True,
         "cross_question_batching": True,
+        "inplace_rotation_expansion": True,
         "image_processor_calls": 1 if images else 0,
         "reused_visual_tokenizations": max(0, len(rows) - 1),
         "max_effective_tokens": max_effective_tokens,
