@@ -300,10 +300,15 @@ def _winner(result):
 
 
 def _parity(reference, candidate):
-    return sum(
-        _winner(left)[0] == _winner(right)[0]
-        for left, right in zip(reference, candidate)
-    )
+    flips = []
+    for i, (left, right) in enumerate(zip(reference, candidate)):
+        lw, lm = _winner(left)
+        rw, rm = _winner(right)
+        if lw != rw:
+            flips.append((i, lw, lm, rw, rm))
+    for i, lw, lm, rw, rm in flips:
+        print(f"  FLIP Q{i}: serial={lw}@{lm:.3f} candidate={rw}@{rm:.3f}", flush=True)
+    return len(reference) - len(flips)
 
 
 def _compile(eng, images):
