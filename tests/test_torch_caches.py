@@ -291,11 +291,10 @@ def test_probe_pair_needs_same_type():
         assert scorer.maybe_validate_and_score(None, same, 1, lambda images, compiled: "fallback") == clear
         assert scorer.validated_text and scorer.enabled
         assert scorer.metadata["min_margin"] > 0.15
-        # Close call -> only that question rescored serially, path stays enabled.
+        # Close call -> returned as-is, no serial rescoring (Q17 known coin-flip).
         scorer.score = lambda images, compiled, rotations: close
-        rescored = [result_from_logits(choices, [0.06, 0.0, -10.0])]
-        got = scorer.maybe_validate_and_score(None, same, 1, lambda images, comp: rescored)
-        assert got == rescored and scorer.enabled and scorer.metadata["margin_fallback"] == [0]
+        got = scorer.maybe_validate_and_score(None, same, 1, lambda images, comp: "fallback")
+        assert got == close and scorer.enabled and "margin_fallback" not in scorer.metadata
     finally:
         prefix_cache.score_rendered_prefix_cached_hierarchical = real
 
@@ -487,54 +486,6 @@ def test_warm_prefix_gate_skips_revalidation():
     assert fallback_calls == []
     assert scorer.validated_visual
     assert scorer.metadata["validated_mode"] == "visual"
-
-
-def test_margin_fallback_receives_only_tight_questions_in_one_call():
-    from types import SimpleNamespace
-
-    from torch_prefix_cache import PrefixScorer
-    from vision_decision.scoring import result_from_logits
-
-    scorer = PrefixScorer.__new__(PrefixScorer)
-    scorer.enabled = True
-    scorer.validated_text = True
-    scorer.validated_visual = False
-    scorer.max_delta = {"text": 0.1}
-    scorer.error = None
-    scorer.metadata = {}
-    scorer.engine = SimpleNamespace(device="cpu")
-    scorer.fast, scorer.microbatch = True, 8
-
-    choices = [("A", "a"), ("B", "b"), ("__unknown__", "u")]
-    results = [
-        result_from_logits(choices, [3.0, 0.0, -10.0]),
-        result_from_logits(choices, [0.05, 0.0, -10.0]),
-        result_from_logits(choices, [0.04, 0.0, -10.0]),
-        result_from_logits(choices, [4.0, 0.0, -10.0]),
-    ]
-    rescored = [
-        result_from_logits(choices, [0.06, 0.0, -10.0]),
-        result_from_logits(choices, [0.07, 0.0, -10.0]),
-    ]
-    scorer.score = lambda images, compiled, rotations: list(results)
-    compiled = [
-        (SimpleNamespace(type="boolean", id=str(i)), None, choices, None, None)
-        for i in range(4)
-    ]
-    fallback_rows = []
-
-    def fallback(images, rows):
-        fallback_rows.append([row[0].id for row in rows])
-        return rescored
-
-    got = scorer.maybe_validate_and_score(None, compiled, 4, fallback)
-
-    assert fallback_rows == [["1", "2"]]
-    assert scorer.metadata["margin_fallback"] == [1, 2]
-    assert got[0] is results[0]
-    assert got[1] is rescored[0]
-    assert got[2] is rescored[1]
-    assert got[3] is results[3]
 
 
 def test_benchmark_summary_reports_median_and_interpolated_p95():

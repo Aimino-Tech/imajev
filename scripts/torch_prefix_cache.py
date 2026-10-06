@@ -21,9 +21,6 @@ from time import perf_counter
 
 import torch
 PARITY_ATOL = 0.02
-# ponytail: floor value uncalibrated (bisect range 0.03-0.14); calibrate on
-# rotation-margin distribution when gate data exists.
-MARGIN_FLOOR = 0.15
 
 class PrefixUnsuitable(Exception):
     """Batch cannot use prefix reuse (no shared prefix, no validatable pair,
@@ -878,8 +875,8 @@ class PrefixScorer:
     scorer stays the fallback. The first eligible batch per evidence mode
     (text vs visual) is double-scored against the serial path; the prefix path
     enables on identical argmax (logit delta is a measured numeric floor,
-    not a correctness signal). Per batch, questions with top1-top2 margin
-    below MARGIN_FLOOR fall back to serial rescoring without disabling.
+    not a correctness signal). No per-question margin rescoring: Q17 showed
+    both paths guessing (margins <0.01), serial is no reference there.
     """
 
     def __init__(self, engine, *, fast=False, microbatch=8):
@@ -996,15 +993,7 @@ class PrefixScorer:
             out = self.score(images, compiled, rotations)
             self.metadata["validated_mode"] = mode
             self.metadata["parity_max_delta"] = self.max_delta.get(mode)
-            margin = self._min_margin(out)
-            self.metadata["min_margin"] = margin
-            # Close calls only: rescore tight questions serially, keep clear ones.
-            tight = [i for i, r in enumerate(out) if self._min_margin([r]) < MARGIN_FLOOR]
-            if tight:
-                self.metadata["margin_fallback"] = tight
-                rescored = fallback(images, [compiled[i] for i in tight])
-                for i, r in zip(tight, rescored):
-                    out[i] = r
+            self.metadata["min_margin"] = self._min_margin(out)
             return out
         except PrefixUnsuitable:
             return fallback(images, compiled)
