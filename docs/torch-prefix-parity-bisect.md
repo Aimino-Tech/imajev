@@ -163,3 +163,8 @@ Gewinn). Bestaetigt Super-KI-Einschaetzung: Conv-Komponente allein rettet den
 (triton 3.1.0, torch cu121). NOTE: Serial-Baseline schwankt run-zu-run
 (Q17 serial true@0.003 vs false@0.011) — Coin-Flip-Fragen sind instabil,
 nicht nur prefix-seitig.
+
+Messung 18:x (Bucket-Luecke 4, mb16, 3 runs): bucket=4 4.375s vs bucket=8
+4.435s (Δ1.4%, p95 ueberlappt, beide pad 2.7%, keine Flips). Kein neuer
+Gewinner — Rauschen. Bucket=8 bleibt Default-Kandidat (eine Showdown-
+Wiederholung + Promotion fehlt noch).
