@@ -33,18 +33,24 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
    mixed-B2 0.108 (r5-14.8 kam vom falsch rechts-gepaddeten Ref, nicht
    vom Prefix). Fix No-Op für dieses Modell, aber harmlos + getestet.
    Laufzeit-Typen/Shape-Check am GPU-Cache steht noch aus.
-## Regeln bis Parity grün
-
-- Gate disablt korrekt; Prefix-Speedup unquotable (aktuell 0×).
-- Result-Cache (identischer Request): cold 1345ms → warm 0.7ms (~1900×).
-- Keine Toleranz-Diskussion vor Fix 1+3.
+2. **Prefill-Maske (GESCHWÄCHT):** MLX prefillt ebenfalls ohne Maske und
+   funktioniert; Einzel-Prompts sind vor dem Split ungepaddet. r4 zeigte
+   Prefill mit/ohne Maske identisch (0.093). r5-Muster damit NICHT erklärt
+   (war Ref-Artefakt) — kein aktiver Fix-Kandidat mehr.
+3. **Referenz-Padding (GEKLÄRT):** r5 nutzte `processor(padding=True)`
+   = rechts, `collate` = links. Re-Bisect mit collate-Ref: mixed 0.108
+   statt 14.8. Lehre: Bisect-Refs immer via `collate` bauen.
+4. **Residuum 0.07–0.11 (OFFEN, einzige aktive Spur):** same 0.067,
+   mixed 0.108, argmax stabil, Logits ~21. Kandidaten: bf16-Rundung vs
+   Fallback-Kernel-Chunking (causal_conv1d/flash-Warnings). fp32-Kontrolle
+   OOM-unmöglich (15.6G). Nächste Sonden: Laufzeit-Cache-Typen/Shapes am
+   GPU-Cache; Gate-0.219 vs Bisect-0.067 Diskrepanz (rotierte Panels).
 
 ## Neue Priorisierung nach Codevergleich (2026-10-06)
 
 1. **GDN-Split an 64er Chunkgrenze** — jetzt im Code umgesetzt, GPU-Parity
    noch messen. HF Transformers 5.18.0 nutzt für Qwen3.5 `chunk_size=64`;
-   r1/r5 trennten bei 53/44 mitten im Chunk. StartLux-Decision richtet seinen
-   Torch shared-prefix ebenfalls auf 1024 (= 16 x 64) aus.
+   r1/r5 trennten bei 53/44 mitten im Chunk.
 2. **Cache branch state / B>1** — weiter prüfen; Branches müssen frische
    Cache-Kopien bekommen und alle Linear-Attention-Zustände pro Row tragen.
 3. **bf16/kernel residue** — erst nach aligned split neu messen.
@@ -54,3 +60,8 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
 Erwarteter nächster GPU-Test: exakt denselben Live-Gate-Probe mit
 `shared_prefix_tokens % 64 == 0` ausgeben und Candidate-vs-Reference delta +
 argmax messen. Keine Toleranz lockern.
+## Regeln bis Parity grün
+
+- Gate disablt korrekt; Prefix-Speedup unquotable (aktuell 0×).
+- Result-Cache (identischer Request): cold 1345ms → warm 0.7ms (~1900×).
+- Keine Toleranz-Diskussion vor geklärtem Residuum (H4).
