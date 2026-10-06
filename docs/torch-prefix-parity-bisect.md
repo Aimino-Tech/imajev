@@ -146,3 +146,10 @@ causal-conv1d-Wheel fuer torch 2.5.1/cu121 via Astral-GPU-Index
 (astral-sh-build/build-causal-conv1d) — rettet nur die Conv-Komponente, nicht
 den 74%-Block (FLA fehlt weiter). Laufende Hebel ohne Env-Risiko:
 Suffix-Bucketing + Q-Prefill-Sweeps (docs/prefix-scheduler-benchmarks.md).
+
+Messung 16:x (Scheduler-Sweep + Produktion-Showdown, bucket=8, qbatch=0):
+Sweep: bucket=8 gewinnt (-11.5%, 4.85s->4.30s, keine Flips, pad 17%->2.7%).
+Alle qbatch>0 flippen (34/35, neuer Flip vs Baseline) -> disqualifiziert, B35
+faellt unter Promotion-Regel raus. Showdown (5 runs): serial 17.8s / batch
+14.6s / warm-gate 4.46s = 3.28x vs batch, 3.99x vs serial. Paritaet 34/35
+(Q17-Coin-Flip). Batch flippt zusaetzlich Q5/Q24/Q26 (32/35).
