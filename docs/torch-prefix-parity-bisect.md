@@ -97,3 +97,8 @@ weitere Messung.
 Rollback 12:5x: triton 3.8.0→3.1.0, FLA/fla-core deinstalliert, Smoke grün
 (Fallback-Warnungen zurück, Logit-Max 18.4 plausibel). Beschluss: kein
 experimenteller Kernel-Pfad im Serving-Stack; ggf. separater Container.
+Win-Messung 12:6x (4 Fragen/4 Rotationen, shared-prefix 448 Tok, text-only):
+serial 3.32s vs prefix 0.64s = 5.20x; 12 Fragen: 9.65s vs 1.56s = 6.20x.
+Decision-Parity 12/12 (inkl. knapper Margins Q8/Q10, Drift ohne Flip),
+max prob-delta 0.05. Gate (argmax + MARGIN_FLOOR) trägt: klare Fälle prefix,
+knappe seriell. Fazit: Production-Win bei 4x-Sampling.
