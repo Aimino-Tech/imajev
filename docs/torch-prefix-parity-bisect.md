@@ -110,3 +110,13 @@ parity_gate 34/35, batch 32/35, fb 8. Q-Prefills gleiche-Laenge-gepackt
 (OOM-Fix: kein Deepcopy). Alle q_shared=64 (raw 65-73). B2-Q-Prefill-Drift
 0.09 (Sonden) traegt nicht bis Logit/Argmax durch — Tiling-Rauschen, kein
 Gate-Risiko. 50.2-Ausreisser war Sonden-Artefakt (Padding+Inhalt gemischt).
+
+Messung 14:x (267a022, Margin-Fallback entfernt, Showdown p50 n=35 rot4 mb16):
+serial 17.3s / batch 14.6s / warm-gate 5.1s = 2.84x vs batch, 3.37x vs serial,
+Paritaet 34/35 (Q17: serial true@0.003 vs prefix false@0.001 — beidseitiges
+Raten, kein Prefix-Fehler). Phasen (sync): global 1xB1x128 0.07s + Q-Prefills
+8xB4-5x64 0.99s (19%) + Suffixe 8xB13-16x45-87 3.83s (74%) + repeat 0.05s.
+Faktoren: 1. Suffix GDN-Fallback-Kernel (FLA/causal_conv1d fehlen), 2. Q-Prefill
+Launches B4-5 (alle q_shared=64, ein B35-Batch moeglich?), 3. Suffix-Laengen
+45-87T, 4. Vision/CPU marginal. Showdown-OOMs unterwegs: fehlendes
+inference_mode (Autograd hielt 140 Graphen/4.6GB) + 16 Graph-Laengen (~4GB).
