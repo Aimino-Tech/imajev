@@ -155,3 +155,11 @@ faellt unter Promotion-Regel raus. Showdown (5 runs): serial 17.8s / batch
 (Q17-Coin-Flip). Batch 32/35 (Q5/Q24/Q26) — Q5-serial selbst __unknown__@0.014
 (kein Entscheid), Batch dort Elfyn Evans@0.476: Flip gegen Serial-Nichtantwort,
 nicht gegen Serial-Wissen.
+
+Messung 17:x (causal-conv1d isoliert, Astral-Wheel 1.7.0+cu12.1.torch2.5):
+kein Fallback-Warning mehr, warm-gate 4.56s vs 4.46s ohne (=Rauschen, kein
+Gewinn). Bestaetigt Super-KI-Einschaetzung: Conv-Komponente allein rettet den
+74%-Block nicht (FLA fehlt weiter). Wheel wieder deinstalliert, Env sauber
+(triton 3.1.0, torch cu121). NOTE: Serial-Baseline schwankt run-zu-run
+(Q17 serial true@0.003 vs false@0.011) — Coin-Flip-Fragen sind instabil,
+nicht nur prefix-seitig.
