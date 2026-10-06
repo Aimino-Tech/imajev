@@ -24,7 +24,7 @@ sys.path[:0] = [str(ROOT / "scripts"), str(ROOT / "src")]
 
 import torch
 from PIL import Image
-from torch_decision import TorchDecision
+from torch_decision import GRAPH_LENGTHS, TorchDecision
 from torch_prefix_cache import PrefixScorer
 from vision_decision.contracts import BooleanField, ChoiceField
 from vision_decision.scoring import (
@@ -113,6 +113,15 @@ def _timed(call):
         else 0.0
     )
     return value, seconds, peak
+
+
+def _timed_seconds(call):
+    """Nested timing that does not reset the outer peak-memory counter."""
+    _sync()
+    started = time.perf_counter()
+    value = call()
+    _sync()
+    return value, time.perf_counter() - started
 
 
 def _percentile(values, q):
@@ -255,7 +264,7 @@ class ProductionFallback:
 
     def __call__(self, images, compiled):
         self.calls.append(len(compiled))
-        value, seconds, _ = _timed(
+        value, seconds = _timed_seconds(
             lambda: production_batch_score(
                 self.eng,
                 images,
@@ -333,6 +342,12 @@ def main(argv=None):
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--rotations", type=int, default=4)
     parser.add_argument("--microbatch", type=int, default=16)
+    parser.add_argument("--max-input-tokens", type=int, default=4096)
+    parser.add_argument(
+        "--no-graphs",
+        action="store_true",
+        help="disable CUDA graph capture even on the fast path",
+    )
     parser.add_argument(
         "--slow",
         action="store_true",
@@ -349,7 +364,29 @@ def main(argv=None):
             f"benchmark image not found: {image_path}; set --image or IMAJEV_BENCH_IMAGE"
         )
 
-    eng = TorchDecision(args.snapshot, device="cuda", dtype=torch.bfloat16)
+    eng = TorchDecision(
+        args.snapshot,
+        device="cuda",
+        dtype=torch.bfloat16,
+        max_length=args.max_input_tokens,
+    )
+    graph_lengths = []
+    if fast and not args.no_graphs:
+        lengths = [
+            length
+            for length in GRAPH_LENGTHS
+            if length <= args.max_input_tokens
+        ]
+        try:
+            graph_lengths = eng.capture_graphs(lengths).lengths
+        except Exception as exc:
+            # Same serving contract as TorchBackend: eager path is the fallback.
+            print(
+                f"CUDA graph capture failed; benchmarking eager fast path: {exc}",
+                flush=True,
+            )
+            eng.graphs = None
+
     image = Image.open(image_path).convert("RGB")
     image.thumbnail((448, 448))
     images = [image]
@@ -456,7 +493,8 @@ def main(argv=None):
 
     print(
         f"\nproduction benchmark: n={len(compiled)} rotations={args.rotations} "
-        f"microbatch={args.microbatch} fast={fast} runs={args.runs}\n",
+        f"microbatch={args.microbatch} fast={fast} runs={args.runs} "
+        f"cuda_graphs={graph_lengths}\n",
         flush=True,
     )
     serial_stats = _print_summary("serial", serial_samples, serial_peaks)
