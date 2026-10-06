@@ -111,7 +111,7 @@ class TorchBackend:
     def __init__(self, bundle=BUNDLE, adapter=None, device=None, rotations=1, max_input_tokens=4096, readout_codes=None,
                  prompt_layout=None, fast=False, graph_lengths=None, merge_lora=False, float32=False,
                  question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True,
-                 prefix_suffix_bucket_width=16, prefix_question_batch=0):
+                 prefix_suffix_bucket_width=8, prefix_question_batch=0):
         from torch_caches import ResultCache, artifact_namespace
         from torch_prefix_cache import PrefixScorer
         import torch
@@ -415,7 +415,7 @@ def _warn_layout(trained, served):
 def build_backend(kind, adapter=None, no_adapter=False, bundle=BUNDLE, rotations=1, max_input_tokens=4096,
                   readout_codes=None, prompt_layout=None, fast=False, merge_lora=False, float32=False,
                   question_microbatch=8, result_cache_size=4096, result_cache_path=None, shared_prefix=True,
-                  prefix_suffix_bucket_width=16, prefix_question_batch=0):
+                  prefix_suffix_bucket_width=8, prefix_question_batch=0):
     """`auto` prefers MLX with the converted adapter and falls back to torch + the PEFT adapter.
 
     readout_codes None / prompt_layout None follow the adapter (its readout rows; its decision_readout.json layout)."""
@@ -735,7 +735,7 @@ def main(argv=None):
                         help="torch only: Jev question ceiling for this server (at most 64)")
     parser.add_argument("--question-microbatch", type=int, default=8,
                         help="torch only: physical questions per batch chunk (bounded VRAM)")
-    parser.add_argument("--prefix-suffix-bucket-width", type=int, default=16,
+    parser.add_argument("--prefix-suffix-bucket-width", type=int, default=8,
                         help="torch only: group shared-prefix suffixes by this token width (0 = preserve order)")
     parser.add_argument("--prefix-question-batch", type=int, default=0,
                         help="torch only: experimental decoupled question-prefix batch size (0 = conservative coupled scheduler)")

@@ -464,7 +464,7 @@ def _pack_question_specs_by_shared_length(
     specs,
     microbatch,
     *,
-    suffix_bucket_width=16,
+    suffix_bucket_width=8,
 ):
     """Pack whole questions by compatible cache length and similar suffix length.
 
@@ -518,7 +518,7 @@ def _pack_question_specs_by_shared_length(
             yield key, packed
 
 
-def _pack_suffix_rows(rows, microbatch, *, suffix_bucket_width=16):
+def _pack_suffix_rows(rows, microbatch, *, suffix_bucket_width=8):
     """Pack suffix rows by length while preserving a strict row-count cap."""
     if microbatch < 1:
         raise ValueError("microbatch must be positive")
@@ -570,7 +570,7 @@ def score_rendered_prefix_cached_hierarchical(
     *,
     fast=False,
     microbatch=8,
-    suffix_bucket_width=16,
+    suffix_bucket_width=8,
     question_prefill_batch=0,
 ):
     """Reuse one global multimodal prefix, then one prefix per rotation group.
@@ -1113,7 +1113,7 @@ class PrefixScorer:
         *,
         fast=False,
         microbatch=8,
-        suffix_bucket_width=16,
+        suffix_bucket_width=8,
         question_prefill_batch=0,
     ):
         self.engine = engine

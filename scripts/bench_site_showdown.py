@@ -354,7 +354,7 @@ def main(argv=None):
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--rotations", type=int, default=4)
     parser.add_argument("--microbatch", type=int, default=16)
-    parser.add_argument("--suffix-bucket-width", type=int, default=16)
+    parser.add_argument("--suffix-bucket-width", type=int, default=8)
     parser.add_argument("--question-prefill-batch", type=int, default=0)
     parser.add_argument("--max-input-tokens", type=int, default=4096)
     parser.add_argument(

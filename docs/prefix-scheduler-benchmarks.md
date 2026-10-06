@@ -12,7 +12,7 @@ cold/warm gate, raw prefix, and canonical serial parity:
 python scripts/bench_site_showdown.py \
   --runs 5 --warmups 1 --serial-runs 1 \
   --microbatch 16 \
-  --suffix-bucket-width 16 \
+  --suffix-bucket-width 8 \
   --question-prefill-batch 0
 ```
 
@@ -65,7 +65,7 @@ Promote a scheduler setting to the server default only when all of these hold:
 The server exposes both knobs for testing:
 
 ```text
---prefix-suffix-bucket-width 16
+--prefix-suffix-bucket-width 8
 --prefix-question-batch 0
 ```
 
