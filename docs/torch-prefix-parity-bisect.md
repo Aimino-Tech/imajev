@@ -131,3 +131,12 @@ bereits fragenuebergreifend gebatcht (8 Batches a B13-16 aus 140 Rows);
 Microbatch 16->35 spart nur Launch-Overhead bei gleichen FLOPs (klein).
 74%-Block bleibt GDN-Fallback-Kernel (FLA/causal_conv1d fehlen) — Container/
 Install ist der grosse Hebel, kein Code-Change. Decke ohne Kernel: ~4s.
+
+Kernel-Versuch 15:x (Env torch 2.5.1+cu121 / triton 3.1.0 / transformers 5.18):
+causal-conv1d nur Source (kein cu121-Wheel, Build faellt ueber urllib-Download).
+FLA 0.5.2 installiert, Dispatch aktiv (kein Fallback-Warning), aber Autotuner
+crasht (do_bench vs triton 3.1). FLA 0.4.2: STAGE-Parse-Fehler (braucht triton
+3.2+). Triton 3.2/3.3 bricht torch.compile (dataclass-TypeError) — REVERT auf
+3.1.0, Env wieder sauber. FAZIT: Kernel-Weg in diesem Env tot ohne torch-Upgrade
+(2.6+/cu124) oder separaten Container. Offene Hebel ohne Kernel: B35-Q-Prefill
+(~0.8s), kuerzere Suffix-Prompts, Screens.
