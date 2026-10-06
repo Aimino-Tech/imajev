@@ -120,3 +120,14 @@ Faktoren: 1. Suffix GDN-Fallback-Kernel (FLA/causal_conv1d fehlen), 2. Q-Prefill
 Launches B4-5 (alle q_shared=64, ein B35-Batch moeglich?), 3. Suffix-Laengen
 45-87T, 4. Vision/CPU marginal. Showdown-OOMs unterwegs: fehlendes
 inference_mode (Autograd hielt 140 Graphen/4.6GB) + 16 Graph-Laengen (~4GB).
+
+Investigation 15:x (B35 Q-Prefill-Hebel, nur Sonden in /tmp, kein Repo-Touch):
+Alle 35 q_shared=64 (Counter bestaetigt). B35-vs-serial K/V-Drift 0.062 (Q0)
+bis worst 0.125 ueber 35 Rows — im Bereich des Parity-Floors (Spot 0.02-0.03
+B1-vs-B4 als Referenz). End-to-end Logit-Impact Q0 Rotation 0: Delta 0.084,
+kein Argmax-Flip. Risiko: Fragen mit Margin <0.1 koennten flippen — Q17
+(0.003/0.001) wuerde flippen. Ersparnis ~0.8s (8 Launches -> 1). Suffixe sind
+bereits fragenuebergreifend gebatcht (8 Batches a B13-16 aus 140 Rows);
+Microbatch 16->35 spart nur Launch-Overhead bei gleichen FLOPs (klein).
+74%-Block bleibt GDN-Fallback-Kernel (FLA/causal_conv1d fehlen) — Container/
+Install ist der grosse Hebel, kein Code-Change. Decke ohne Kernel: ~4s.
