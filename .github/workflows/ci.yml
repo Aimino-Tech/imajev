@@ -1,0 +1,28 @@
+name: community-ci
+on:
+  push:
+    branches: [main, torch-batch]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: community-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,serve]"
+      - run: python -m pip check
+      - run: python -m compileall -q src scripts
+      - run: pytest -q tests/test_contracts.py tests/test_temperature_calibration.py tests/test_playground_server.py
