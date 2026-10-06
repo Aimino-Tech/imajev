@@ -168,3 +168,17 @@ Messung 18:x (Bucket-Luecke 4, mb16, 3 runs): bucket=4 4.375s vs bucket=8
 4.435s (Δ1.4%, p95 ueberlappt, beide pad 2.7%, keine Flips). Kein neuer
 Gewinner — Rauschen. Bucket=8 bleibt Default-Kandidat (eine Showdown-
 Wiederholung + Promotion fehlt noch).
+
+Messung 19:x (Microbatch-Luecke, bucket=8): mb24 Sweep 4.35s (baseline 34/35
+vs eigene B0-Baseline) — Showdown-Klaerung: warm-gate 4.52s, 35/35 vs Serial,
+kein Kandidat-Flip (B0-Baseline selbst weicht ab). mb32 Sweep 4.54s, 35/35
+sauber aber langsamer als mb16. FAZIT: mb16/bucket=8 bleibt (4.46s), mb24
+gleichwertig im Rauschen, mb32 langsamer. Alle Q-Prefill-Batches >0 weiter
+disqualifiziert.
+
+Messung 20:x (Showdown-Wiederholung, mb16/bucket=8, 5 runs): warm-gate 4.39s
+(3.21x vs batch, 3.88x vs serial), 34/35 (Q17-Flip). Promotion-Regel erfuellt:
+kein neuer Flip, serial nicht schlechter, p50-Gewinn ~10% aus Sweep-In-Run
+(4.30 vs 4.85, Messung 16:x — Showdown lief nur bucket=8 ohne eigene B0-
+Kontrolle), VRAM 10.13GiB im Budget. Bucket=8 → Server-Default promoten
+(upstream 95df316, volle Promotion alle Defaults).
