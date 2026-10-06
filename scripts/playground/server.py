@@ -273,35 +273,63 @@ class TorchBackend:
         return results, usage
 
     def _score_batched(self, images, compiled):
-        """Physical batch dispatcher: chunked to <= microbatch, prefix-KV when validated.
+        """Keep one global prefix across the logical panel; microbatch suffix work only.
 
-        Splits large logical panels into <= question_microbatch chunks (bounded
-        VRAM), then per chunk tries the shared-prefix KV path (parity-gated per
-        evidence mode, serial fallback) so the vision/evidence prefix runs once.
+        PrefixScorer already bounds the physical suffix batch by
+        question_microbatch, so chunking questions before it would repeat the
+        image encoder and global KV prefill. The non-prefix/fallback path stays
+        physically bounded via _score_serial_bounded().
         """
-        microbatch = max(1, int(getattr(self, "question_microbatch", 8) or 8))
-        if len(compiled) > microbatch:
-            combined, total_seconds, max_tokens = [], 0.0, 0
-            for start in range(0, len(compiled), microbatch):
-                combined.extend(self._score_chunk(images, compiled[start:start + microbatch]))
-                total_seconds += float(getattr(self, "_batch_seconds", 0.0) or 0.0)
-                max_tokens = max(max_tokens, int(getattr(self, "_last_batch_tokens", 0) or 0))
-            self._batch_seconds, self._last_batch_tokens = total_seconds, max_tokens
-            return combined
-        return self._score_chunk(images, compiled)
+        scorer = getattr(self, "_prefix_scorer", None)
+        if (
+            scorer is not None
+            and getattr(self, "shared_prefix_requested", False)
+            and getattr(scorer, "enabled", False)
+            and len(compiled) > 1
+        ):
+            return self._score_chunk(images, compiled)
+        return self._score_serial_bounded(images, compiled)
 
     def _score_chunk(self, images, compiled):
-        """One <= microbatch chunk: prefix-KV when requested+enabled, else serial batch."""
+        """One logical prefix group; suffixes stay bounded inside PrefixScorer."""
         scorer = getattr(self, "_prefix_scorer", None)
         if scorer is not None and getattr(self, "shared_prefix_requested", False):
             try:
-                out = scorer.maybe_validate_and_score(images, compiled, self.rotations, self._score_serial_batch)
+                out = scorer.maybe_validate_and_score(
+                    images,
+                    compiled,
+                    self.rotations,
+                    self._score_serial_bounded,
+                )
             except Exception:
-                log.exception("prefix-KV scoring failed; falling back to serial batch")
-                out = self._score_serial_batch(images, compiled)
+                log.exception("prefix-KV scoring failed; falling back to bounded serial batch")
+                out = self._score_serial_bounded(images, compiled)
             self._prefix_cache_metadata = dict(getattr(scorer, "metadata", None) or {})
             return out
-        return self._score_serial_batch(images, compiled)
+        return self._score_serial_bounded(images, compiled)
+
+    def _score_serial_bounded(self, images, compiled):
+        """Serial/batched fallback bounded by question_microbatch without prefix reuse."""
+        microbatch = max(1, int(getattr(self, "question_microbatch", 8) or 8))
+        if len(compiled) <= microbatch:
+            return self._score_serial_batch(images, compiled)
+
+        combined, total_seconds, max_tokens = [], 0.0, 0
+        for start in range(0, len(compiled), microbatch):
+            combined.extend(
+                self._score_serial_batch(
+                    images,
+                    compiled[start : start + microbatch],
+                )
+            )
+            total_seconds += float(getattr(self, "_batch_seconds", 0.0) or 0.0)
+            max_tokens = max(
+                max_tokens,
+                int(getattr(self, "_last_batch_tokens", 0) or 0),
+            )
+        self._batch_seconds = total_seconds
+        self._last_batch_tokens = max_tokens
+        return combined
 
     def _score_serial_batch(self, images, compiled):
         """One forward per rotation offset across all questions (CUDA only).

@@ -332,6 +332,79 @@ def test_argmax_mismatch_disables_prefix_path():
 
 
 
+
+def test_prefix_visual_preparation_processes_image_once():
+    import torch
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import _prepare_rendered_examples_once
+
+    class Tokenizer:
+        image_id = 999
+
+        def __call__(self, text, add_special_tokens=False, return_tensors="pt"):
+            ids, i = [], 0
+            while i < len(text):
+                if text.startswith("<image>", i):
+                    ids.append(self.image_id)
+                    i += len("<image>")
+                else:
+                    ids.append(ord(text[i]) % 251)
+                    i += 1
+            tensor = torch.tensor([ids], dtype=torch.long)
+            return {
+                "input_ids": tensor,
+                "attention_mask": torch.ones_like(tensor),
+            }
+
+    class Processor:
+        image_token = "<image>"
+
+        def __init__(self):
+            self.tokenizer = Tokenizer()
+            self.image_processor = SimpleNamespace(merge_size=2)
+            self.image_calls = 0
+
+        def replace_image_token(self, image_inputs, image_idx, **kwargs):
+            grid = image_inputs["image_grid_thw"][image_idx]
+            count = int(grid.prod().item()) // (self.image_processor.merge_size ** 2)
+            return self.image_token * count
+
+        def __call__(self, text, images=None, return_tensors="pt", **kwargs):
+            if images:
+                self.image_calls += 1
+                grids = torch.tensor([[1, 4, 4]], dtype=torch.long)
+                parts = text[0].split(self.image_token)
+                expanded = (
+                    parts[0]
+                    + self.replace_image_token({"image_grid_thw": grids}, 0)
+                    + parts[1]
+                )
+                out = self.tokenizer(expanded, add_special_tokens=False, return_tensors="pt")
+                out["image_grid_thw"] = grids
+                out["pixel_values"] = torch.zeros((1, 1), dtype=torch.uint8)
+                return out
+            return self.tokenizer(text[0], add_special_tokens=False, return_tensors="pt")
+
+    processor = Processor()
+    engine = SimpleNamespace(
+        processor=processor,
+        label_ids=lambda rendered, labels: [1, 2],
+    )
+    prepared = _prepare_rendered_examples_once(
+        engine,
+        [object()],
+        [
+            ("A<image>B", ["A", "B"]),
+            ("A<image>C", ["A", "B"]),
+            ("A<image>D", ["A", "B"]),
+        ],
+    )
+
+    assert processor.image_calls == 1
+    assert len(prepared) == 3
+    assert all(int((row[2] == Tokenizer.image_id).sum()) == 4 for row in prepared)
+
 def test_degenerate_hidden_falls_back_without_disabling():
     import torch
 

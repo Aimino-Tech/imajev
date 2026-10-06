@@ -199,43 +199,13 @@ def score_rendered_prefix_cached(
     if len(rendered_examples) < 2:
         raise ValueError("prefix reuse requires at least two prompts")
 
-    prepared = []
-    rows = []
-    for rendered, labels in rendered_examples:
-        if fast:
-            token_ids = engine.label_ids(rendered, labels)
-            image_list = (
-                []
-                if images is None
-                else images
-                if isinstance(images, list)
-                else [images]
-            )
-            inputs = dict(
-                engine.processor(
-                    text=[rendered],
-                    images=image_list or None,
-                    return_tensors="pt",
-                    do_rescale=False,
-                    do_normalize=False,
-                )
-            )
-        else:
-            image_list = (
-                []
-                if images is None
-                else images
-                if isinstance(images, list)
-                else [images]
-            )
-            token_ids = engine.label_ids(rendered, labels)
-            inputs = engine.processor(
-                text=[rendered],
-                images=image_list or None,
-                return_tensors="pt",
-            )
-        prepared.append((inputs, token_ids))
-        rows.append(_unpadded_ids(inputs))
+    prepared = _prepare_rendered_examples_once(
+        engine,
+        images,
+        rendered_examples,
+        fast=fast,
+    )
+    rows = [item[2] for item in prepared]
 
     raw_shared = _longest_common_prefix(rows)
     alignment = _prefix_alignment(engine)
@@ -377,6 +347,8 @@ def score_rendered_prefix_cached(
         "suffix_batches": suffix_batches,
         "microbatch": microbatch,
         "prefix_cache": True,
+        "image_processor_calls": 1 if images else 0,
+        "reused_visual_tokenizations": max(0, len(rows) - 1),
     }
 
 
@@ -409,6 +381,78 @@ def _prepare_rendered_example(engine, images, rendered, labels, *, fast=False):
     return inputs, token_ids, _unpadded_ids(inputs)
 
 
+def _tokenize_with_cached_visual_layout(engine, rendered, visual_inputs):
+    """Tokenize another prompt without re-running the image processor.
+
+    Qwen's processor expands each image placeholder from image_grid_thw before
+    tokenization. Reuse the first prompt's grid and the processor's own
+    replace_image_token() implementation, then tokenize text only.
+    """
+    processor = engine.processor
+    image_token = getattr(processor, "image_token", None)
+    grids = visual_inputs.get("image_grid_thw")
+    expanded = rendered
+
+    if grids is not None:
+        if not image_token or not callable(getattr(processor, "replace_image_token", None)):
+            raise PrefixUnsuitable("processor cannot reuse cached visual token layout")
+        count = int(grids.shape[0])
+        parts = expanded.split(image_token)
+        if len(parts) - 1 != count:
+            raise PrefixUnsuitable(
+                f"rendered prompt has {len(parts) - 1} image placeholders, expected {count}"
+            )
+        image_inputs = {"image_grid_thw": grids}
+        chunks = [parts[0]]
+        for index in range(count):
+            chunks.append(processor.replace_image_token(image_inputs, index))
+            chunks.append(parts[index + 1])
+        expanded = "".join(chunks)
+    elif image_token and image_token in expanded:
+        raise PrefixUnsuitable("rendered prompt has image placeholders but no cached image grid")
+
+    return dict(
+        processor.tokenizer(
+            expanded,
+            add_special_tokens=False,
+            return_tensors="pt",
+        )
+    )
+
+
+def _prepare_rendered_examples_once(engine, images, rendered_examples, *, fast=False):
+    """Prepare one visual prompt, then reuse its visual layout for all others.
+
+    Only the first example calls the multimodal processor. The cached path is
+    runtime-guarded by reproducing the first example's exact input_ids; any
+    transformers/tokenizer behavior change falls back instead of risking a
+    silent prompt mismatch.
+    """
+    if not rendered_examples:
+        return []
+
+    first_rendered, first_labels = rendered_examples[0]
+    first = _prepare_rendered_example(
+        engine, images, first_rendered, first_labels, fast=fast
+    )
+    cached_first = _tokenize_with_cached_visual_layout(
+        engine, first_rendered, first[0]
+    )
+    if not torch.equal(_unpadded_ids(cached_first), first[2]):
+        raise PrefixUnsuitable(
+            "cached visual tokenization does not match multimodal processor"
+        )
+
+    prepared = [first]
+    for rendered, labels in rendered_examples[1:]:
+        token_ids = engine.label_ids(rendered, labels)
+        inputs = _tokenize_with_cached_visual_layout(
+            engine, rendered, first[0]
+        )
+        prepared.append((inputs, token_ids, _unpadded_ids(inputs)))
+    return prepared
+
+
 def score_rendered_prefix_cached_hierarchical(
     engine,
     images,
@@ -424,19 +468,23 @@ def score_rendered_prefix_cached_hierarchical(
     once for the whole request; the question-specific header is evaluated once
     per question; only the reordered candidate suffix is evaluated per rotation.
     """
+    flat_examples = [
+        example
+        for group in rendered_groups
+        for example in group
+    ]
+    flat_prepared = _prepare_rendered_examples_once(
+        engine,
+        images,
+        flat_examples,
+        fast=fast,
+    )
     prepared_groups = []
     rows = []
+    cursor = 0
     for group in rendered_groups:
-        prepared = [
-            _prepare_rendered_example(
-                engine,
-                images,
-                rendered,
-                labels,
-                fast=fast,
-            )
-            for rendered, labels in group
-        ]
+        prepared = flat_prepared[cursor : cursor + len(group)]
+        cursor += len(group)
         prepared_groups.append(prepared)
         rows.extend(item[2] for item in prepared)
 
@@ -650,6 +698,8 @@ def score_rendered_prefix_cached_hierarchical(
         "suffix_batches": suffix_batches,
         "microbatch": microbatch,
         "prefix_cache": True,
+        "image_processor_calls": 1 if images else 0,
+        "reused_visual_tokenizations": max(0, len(rows) - 1),
         "max_effective_tokens": max_effective_tokens,
     }
 
