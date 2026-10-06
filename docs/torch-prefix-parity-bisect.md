@@ -137,6 +137,12 @@ causal-conv1d nur Source (kein cu121-Wheel, Build faellt ueber urllib-Download).
 FLA 0.5.2 installiert, Dispatch aktiv (kein Fallback-Warning), aber Autotuner
 crasht (do_bench vs triton 3.1). FLA 0.4.2: STAGE-Parse-Fehler (braucht triton
 3.2+). Triton 3.2/3.3 bricht torch.compile (dataclass-TypeError) — REVERT auf
-3.1.0, Env wieder sauber. FAZIT: Kernel-Weg in diesem Env tot ohne torch-Upgrade
-(2.6+/cu124) oder separaten Container. Offene Hebel ohne Kernel: B35-Q-Prefill
-(~0.8s), kuerzere Suffix-Prompts, Screens.
+3.1.0, Env wieder sauber. FAZIT (ex-Super-KI bestaetigt): FLA-Linie verlangt
+inzwischen torch>=2.7 + triton>=3.3 — Kernel-Weg im aktuellen Production-Stack
+nicht sinnvoll weiterverfolgbar; Kernel-Experiment gehoert in separaten
+modernen Container (torch>=2.7, triton>=3.3, current FLA + causal-conv1d, dann
+exakt unser Showdown dagegen). Offener isolierter Test ohne Env-Risiko:
+causal-conv1d-Wheel fuer torch 2.5.1/cu121 via Astral-GPU-Index
+(astral-sh-build/build-causal-conv1d) — rettet nur die Conv-Komponente, nicht
+den 74%-Block (FLA fehlt weiter). Laufende Hebel ohne Env-Risiko:
+Suffix-Bucketing + Q-Prefill-Sweeps (docs/prefix-scheduler-benchmarks.md).
