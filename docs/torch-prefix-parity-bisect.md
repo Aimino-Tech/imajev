@@ -60,8 +60,12 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
 Erwarteter nächster GPU-Test: exakt denselben Live-Gate-Probe mit
 `shared_prefix_tokens % 64 == 0` ausgeben und Candidate-vs-Reference delta +
 argmax messen. Keine Toleranz lockern.
-## Regeln bis Parity grün
+## Befund 11:35 — Referenz selbst batch-sensitiv (wichtiger als alles oben)
 
-- Gate disablt korrekt; Prefix-Speedup unquotable (aktuell 0×).
-- Result-Cache (identischer Request): cold 1345ms → warm 0.7ms (~1900×).
-- Keine Toleranz-Diskussion vor geklärtem Residuum (H4).
+Seriell B=1 vs B=2, identische Prompts: delta 0.177/0.071 — GRÖSSER als das
+Prefix-Residuum (0.067). GDN-aligned shared=128: delta 0.121, argmax stabil.
+Fazit: Prefix-vs-Batch vergleicht gegen eine wackelnde Referenz. Parity-Toleranz
+0.02 ist gegen diese Baseline unerreichbar — egal ob Prefix oder seriell.
+Nächste Frage: deterministische Referenz (gleiche Batchform beidseitig) statt
+kleinere Deltas jagen.
+ ## Regeln bis Parity grün
