@@ -60,42 +60,44 @@ def _longest_common_prefix(rows):
 
 
 def _repeat_cache(cache, batch_size):
-    """Clone one-prefix transformers cache and expand it to batch_size."""
+    """Clone one-prefix cache and expand all cached states to batch_size.
+
+    Qwen3.5 hybrid layers inherit a batch repeater that expands dynamic
+    attention K/V but leaves linear-attention conv/recurrent states at batch 1.
+    Iterate layers ourselves so a successful K/V repeat cannot hide them.
+    """
     branch = copy.deepcopy(cache)
+    layers = getattr(branch, "layers", None)
+    if layers is not None:
+        for layer in layers:
+            repeat = getattr(layer, "batch_repeat_interleave", None)
+            if callable(repeat):
+                repeat(batch_size)
+            # Safe for hybrids and future cache layers: helper only expands
+            # states that still have batch dimension 1.
+            _repeat_linear_layer(layer, batch_size)
+        return branch
+
+    # Generic non-layered cache implementations.
     repeat = getattr(branch, "batch_repeat_interleave", None)
     if callable(repeat):
-        try:
-            repeat(batch_size)
-        except AttributeError:
-            # Hybrid Qwen3.5 stack: full-attention layers repeat, linear-attention
-            # conv/recurrent states repeat per layer instead.
-            for layer in getattr(branch, "layers", []):
-                entry = getattr(layer, "batch_repeat_interleave", None)
-                if callable(entry):
-                    try:
-                        entry(batch_size)
-                    except AttributeError:
-                        _repeat_linear_layer(layer, batch_size)
-                else:
-                    _repeat_linear_layer(layer, batch_size)
+        repeat(batch_size)
         return branch
 
     # Compatibility with legacy tuple/list past_key_values.
     if isinstance(branch, (tuple, list)):
-        layers = []
+        repeated = []
         for layer in branch:
-            layers.append(
+            repeated.append(
                 tuple(
                     value.expand(batch_size, *value.shape[1:])
                     for value in layer
                 )
             )
-        return type(branch)(layers)
+        return type(branch)(repeated)
     raise TypeError(
         f"unsupported transformers cache type: {type(branch).__name__}"
     )
-
-
 def _repeat_linear_layer(layer, batch_size):
     """Expand one linear-attention layer's conv/recurrent states to batch_size."""
     for name in ("conv_states", "recurrent_states"):

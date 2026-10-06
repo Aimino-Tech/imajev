@@ -302,3 +302,40 @@ def test_degenerate_hidden_falls_back_without_disabling():
         pass
     else:
         raise AssertionError("0D hidden must raise PrefixUnsuitable")
+
+
+def test_repeat_cache_expands_qwen_hybrid_linear_states():
+    """HF hybrid cache repeats K/V but not conv/recurrent states by itself."""
+    import torch
+
+    from torch_prefix_cache import _repeat_cache
+
+    class HybridLayer:
+        def __init__(self):
+            self.keys = torch.tensor([[[[1.0]]]])
+            self.values = torch.tensor([[[[2.0]]]])
+            self.conv_states = {0: torch.tensor([[[3.0, 4.0]]])}
+            self.recurrent_states = {0: torch.tensor([[[[5.0]]]])}
+
+        def batch_repeat_interleave(self, repeats):
+            # Mirrors HF hybrid resolution: only dynamic-attention K/V.
+            self.keys = self.keys.repeat_interleave(repeats, dim=0)
+            self.values = self.values.repeat_interleave(repeats, dim=0)
+
+    class Cache:
+        def __init__(self):
+            self.layers = [HybridLayer()]
+
+    original = Cache()
+    branch = _repeat_cache(original, 3)
+    layer = branch.layers[0]
+
+    assert layer.keys.shape[0] == 3
+    assert layer.values.shape[0] == 3
+    assert layer.conv_states[0].shape[0] == 3
+    assert layer.recurrent_states[0].shape[0] == 3
+    assert torch.equal(layer.conv_states[0][2], original.layers[0].conv_states[0][0])
+    assert torch.equal(layer.recurrent_states[0][2], original.layers[0].recurrent_states[0][0])
+    # Branching must never mutate the shared prefix cache.
+    assert original.layers[0].keys.shape[0] == 1
+    assert original.layers[0].conv_states[0].shape[0] == 1
