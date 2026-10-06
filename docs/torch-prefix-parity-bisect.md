@@ -77,5 +77,13 @@ Messung 11:50 (shared=128, aligned): rep-B1=0, rep-B2=0 → deterministisch,
 (prefix_error ~0.008) trifft NICHT zu — Prefix hat echten Fehler ~0.1
 gegenüber gleichem Execution-Mode. argmax überall stabil. Fazit: kein
 Messartefakt mehr übrig; Restfehler sitzt im Prefix-Pfad selbst (split bei
-128 trotz Alignment? Suffix-Branch-State? GDN-Recurrence über Split?).
- ## Regeln bis Parity grün
+Messung 12:0x (5-Stufen-Leiter, frischer Prefill pro Stufe — Suffix-Calls
+mutieren Cache trotz use_cache=False, drift 26.7!): S1 no-copy 0.033, S2
+deepcopy 0.033 (Clone unschuldig), S3 repeat-B2-identisch 0.009 (Repeat
+unschuldig), S4 verschieden rowA 0.009/rowB 0.086. Sprung nur bei
+inhaltlich abweichendem Suffix. Split-Sweep rowB: 128→0.089, 130→0.030,
+133→0.013, 135→0.078, 143→0.015 — exakt reproduzierbar, aber ohne
+Chunk-Raster. Layer-Hooks: Drift 0.001 (l0) → 0.625 (l31), monoton
+akkumulierend, kein Sprung-Layer. Deutung: GDN-Recurrence setzt über Split
+nicht exakt fort (Fallback-Kernel, causal_conv1d+FLA fehlen); kleiner
+Anfangsfehler verstärkt sich pro Layer. Deterministisch, argmax-stabil.
