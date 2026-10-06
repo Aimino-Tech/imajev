@@ -27,21 +27,12 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
 
 ## Offene Hypothesen (priorisiert)
 
-1. **Hybrid-States (BESTÄTIGT am Code, Fix in Arbeit):**
-   `LinearAttentionAndFullAttentionLayer` hat keinen eigenen
-   `batch_repeat_interleave` — MRO gewinnt `DynamicLayer` (nur keys/values),
-   conv/recurrent bleiben bei B>1 auf B=1. `_repeat_cache` hielt das für
-   Erfolg und lief nie in den Linear-Fallback. Fix: nach Top-Level-repeat
-   immer `_repeat_linear_layer` über alle Layer (idempotent via Guard).
-2. **Prefill-Maske (GESCHWÄCHT):** MLX prefillt ebenfalls ohne Maske und
-   funktioniert; einzelne Prompts sind vor dem Split ungepaddet. r5-Muster
-   damit nicht erklärt — nach Hybrid-Fix neu bewerten.
-3. **Referenz-Padding:** Bisect-Ref nutzte `processor(..., padding=True)`
-   (default rechts) statt `eng.collate` (links, decision bei -1).
-   Vor Fix erst Ref mit `collate` verifizieren.
-4. **Residuum 0.067:** nach Fix neu messen; Kandidaten bf16-Rundung
-   (Logits ~21) vs Fallback-Kernel-Chunking. float32-Kontrolllauf trennt
-   Numerik von Logik.
+1. **Hybrid-States (ZURÜCKGEZOGEN 11:20 — trifft falsche Klasse):**
+   Qwen3.5-`layer_types` = getrennt `linear_attention`/`full_attention`,
+   nie `hybrid`. Re-Bisect mit f55b7bc: same-B2 0.067 UNVERÄNDERT,
+   mixed-B2 0.108 (r5-14.8 kam vom falsch rechts-gepaddeten Ref, nicht
+   vom Prefix). Fix No-Op für dieses Modell, aber harmlos + getestet.
+   Laufzeit-Typen/Shape-Check am GPU-Cache steht noch aus.
 ## Regeln bis Parity grün
 
 - Gate disablt korrekt; Prefix-Speedup unquotable (aktuell 0×).
