@@ -102,3 +102,11 @@ serial 3.32s vs prefix 0.64s = 5.20x; 12 Fragen: 9.65s vs 1.56s = 6.20x.
 Decision-Parity 12/12 (inkl. knapper Margins Q8/Q10, Drift ohne Flip),
 max prob-delta 0.05. Gate (argmax + MARGIN_FLOOR) trägt: klare Fälle prefix,
 knappe seriell. Fazit: Production-Win bei 4x-Sampling.
+
+Messung 13:x (HEAD 9803309, Cross-Question-Batching, Wiki 35Qx4 fast=True):
+serial 17.2s / batch 13.4s / gate 9.2s = gate_vs_batch 1.46x (vorher 1.26x),
+parity_gate 34/35, batch 32/35, fb 8. Q-Prefills gleiche-Laenge-gepackt
+(8 Batches statt 35xB1), Suffixe pro Frage aus In-Place-expandiertem Cache
+(OOM-Fix: kein Deepcopy). Alle q_shared=64 (raw 65-73). B2-Q-Prefill-Drift
+0.09 (Sonden) traegt nicht bis Logit/Argmax durch — Tiling-Rauschen, kein
+Gate-Risiko. 50.2-Ausreisser war Sonden-Artefakt (Padding+Inhalt gemischt).
