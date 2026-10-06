@@ -25,6 +25,14 @@ with a probability on each and an explicit <i>can't tell</i>. Your system acts w
 
 <p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b></a> · <a href="https://mohit67890.github.io/imajev/"><b>Website</b></a> · <a href="#quickstart">Quickstart</a> · <a href="#checked-not-cherry-picked">Checked examples</a> · <a href="#results">Results</a> · <a href="https://mohit67890.github.io/imajev/report/">Technical report</a></p>
 
+> [!NOTE]
+> **Community performance fork.** This repository preserves the upstream
+> [mohit67890/imajev](https://github.com/mohit67890/imajev) model, benchmark lineage,
+> licence and citation, and adds a production-oriented Torch/Hugging Face serving path
+> for high-throughput multi-question workloads. See [FORK.md](FORK.md),
+> [COMMUNITY.md](COMMUNITY.md), and [docs/prefix-scheduler-benchmarks.md](docs/prefix-scheduler-benchmarks.md).
+
+
 ## Independent results
 
 Screenshots of the official leaderboards, captured 28 Sep 2026. Each board is run by its own maintainer, not by us; click through for the live page.
@@ -262,7 +270,7 @@ The Mac (MLX) weights agree with the GPU run on 97 to 99% of ImajevBench answers
 ## Quickstart
 
 ```sh
-git clone https://github.com/mohit67890/imajev && cd imajev
+git clone https://github.com/Aimino-Tech/imajev && cd imajev
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[serve,mlx]"          # Apple silicon;  elsewhere: pip install -e ".[serve,torch]"
 python scripts/download_model.py --model 4b          # pinned Qwen3.5-4B into .cache/
@@ -552,6 +560,7 @@ harness in `src/imajev_bench`, leaderboard in `bench/LEADERBOARD.md`. Run your m
 - `results/` every evaluation we report: `results/imajev-1.0/` (the released models, their calibration files and release gates; `previous-version/` holds the previous adapters and their earlier paired tests), `results/benchmarks/`
   (JevBench and ImajevBench runs), plus reports on earlier checkpoints (`results/earlier-checkpoints/`).
 - `docs/` specs and the run book.
+- `FORK.md`, `COMMUNITY.md` fork provenance, performance notes and contribution paths.
 
 ## Author and citation
 

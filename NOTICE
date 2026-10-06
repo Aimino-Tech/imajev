@@ -1,0 +1,10 @@
+imajev community performance fork
+
+This distribution includes software derived from imajev:
+Copyright 2026 Mohit Garg
+Upstream: https://github.com/mohit67890/imajev
+Licence: Apache License 2.0
+
+This fork contains additional modifications by contributors to https://github.com/Aimino-Tech/imajev, primarily in Torch/Hugging Face serving, caching, scheduling, benchmarking and community tooling.
+
+Model weights, datasets and third-party assets retain their documented upstream terms.

@@ -11,6 +11,12 @@ license = "Apache-2.0"
 requires-python = ">=3.11,<3.15"
 dependencies = ["pydantic>=2,<3", "Pillow>=11", "huggingface_hub>=0.30"]
 
+[project.urls]
+Homepage = "https://github.com/Aimino-Tech/imajev"
+Repository = "https://github.com/Aimino-Tech/imajev"
+Issues = "https://github.com/Aimino-Tech/imajev/issues"
+Upstream = "https://github.com/mohit67890/imajev"
+
 [project.optional-dependencies]
 mlx = ["mlx-vlm==0.7.1"]
 torch = ["torch>=2.6", "torchvision>=0.21", "transformers>=4.55", "peft>=0.15", "safetensors>=0.5", "accelerate>=1.0"]
