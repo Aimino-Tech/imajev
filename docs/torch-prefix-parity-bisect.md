@@ -94,3 +94,6 @@ Chunk-Decomposition unschuldig; qkv-preconv exakt 0, Drift entsteht in
 Conv/GDN. Fazit: Split-Fehler kernel-abhängig, aber kein Kernel-Pfad führt
 zu Parity. Gate-Entscheidung nötig (Pfad meiden vs Floor-Toleranz), keine
 weitere Messung.
+Rollback 12:5x: triton 3.8.0→3.1.0, FLA/fla-core deinstalliert, Smoke grün
+(Fallback-Warnungen zurück, Logit-Max 18.4 plausibel). Beschluss: kein
+experimenteller Kernel-Pfad im Serving-Stack; ggf. separater Container.
