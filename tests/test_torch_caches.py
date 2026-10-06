@@ -443,6 +443,113 @@ def test_hierarchical_scheduler_batches_questions_by_expanded_rotation_rows():
 
 
 
+
+def test_warm_prefix_gate_skips_revalidation():
+    import torch
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import PrefixScorer
+    from vision_decision.scoring import result_from_logits
+
+    scorer = PrefixScorer.__new__(PrefixScorer)
+    scorer.enabled = True
+    scorer.validated_text = False
+    scorer.validated_visual = True
+    scorer.max_delta = {"visual": 0.1}
+    scorer.error = None
+    scorer.metadata = {}
+    scorer.engine = SimpleNamespace(device="cpu")
+    scorer.fast, scorer.microbatch = True, 8
+
+    choices = [("A", "a"), ("B", "b"), ("__unknown__", "u")]
+    clear = [
+        result_from_logits(choices, [3.0, 0.0, -10.0]),
+        result_from_logits(choices, [2.0, 0.0, -10.0]),
+    ]
+    scorer.score = lambda images, compiled, rotations: list(clear)
+    scorer.reference_logits = lambda *args, **kwargs: (_ for _ in ()).throw(
+        AssertionError("warm gate must not run parity reference")
+    )
+    compiled = [
+        (SimpleNamespace(type="boolean"), None, choices, None, None),
+        (SimpleNamespace(type="boolean"), None, choices, None, None),
+    ]
+    fallback_calls = []
+
+    got = scorer.maybe_validate_and_score(
+        [object()],
+        compiled,
+        4,
+        lambda images, rows: fallback_calls.append(len(rows)) or [],
+    )
+
+    assert got == clear
+    assert fallback_calls == []
+    assert scorer.validated_visual
+    assert scorer.metadata["validated_mode"] == "visual"
+
+
+def test_margin_fallback_receives_only_tight_questions_in_one_call():
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import PrefixScorer
+    from vision_decision.scoring import result_from_logits
+
+    scorer = PrefixScorer.__new__(PrefixScorer)
+    scorer.enabled = True
+    scorer.validated_text = True
+    scorer.validated_visual = False
+    scorer.max_delta = {"text": 0.1}
+    scorer.error = None
+    scorer.metadata = {}
+    scorer.engine = SimpleNamespace(device="cpu")
+    scorer.fast, scorer.microbatch = True, 8
+
+    choices = [("A", "a"), ("B", "b"), ("__unknown__", "u")]
+    results = [
+        result_from_logits(choices, [3.0, 0.0, -10.0]),
+        result_from_logits(choices, [0.05, 0.0, -10.0]),
+        result_from_logits(choices, [0.04, 0.0, -10.0]),
+        result_from_logits(choices, [4.0, 0.0, -10.0]),
+    ]
+    rescored = [
+        result_from_logits(choices, [0.06, 0.0, -10.0]),
+        result_from_logits(choices, [0.07, 0.0, -10.0]),
+    ]
+    scorer.score = lambda images, compiled, rotations: list(results)
+    compiled = [
+        (SimpleNamespace(type="boolean", id=str(i)), None, choices, None, None)
+        for i in range(4)
+    ]
+    fallback_rows = []
+
+    def fallback(images, rows):
+        fallback_rows.append([row[0].id for row in rows])
+        return rescored
+
+    got = scorer.maybe_validate_and_score(None, compiled, 4, fallback)
+
+    assert fallback_rows == [["1", "2"]]
+    assert scorer.metadata["margin_fallback"] == [1, 2]
+    assert got[0] is results[0]
+    assert got[1] is rescored[0]
+    assert got[2] is rescored[1]
+    assert got[3] is results[3]
+
+
+def test_benchmark_summary_reports_median_and_interpolated_p95():
+    from bench_site_showdown import summarize_samples
+
+    summary = summarize_samples([1.0, 2.0, 3.0, 4.0, 5.0])
+
+    assert summary["runs"] == 5
+    assert summary["p50"] == 3.0
+    assert summary["p95"] == 4.8
+    assert summary["min"] == 1.0
+    assert summary["max"] == 5.0
+
+
+
 def test_degenerate_hidden_falls_back_without_disabling():
     import torch
 
