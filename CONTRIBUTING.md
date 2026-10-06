@@ -1,8 +1,23 @@
 # Contributing
 
-- Open an issue before a large change; small fixes can go straight to a pull request.
-- Run `pytest` before submitting. Tests that need model weights or private data are skipped automatically when those are absent.
-- Do not commit weights, datasets, prediction files or credentials. Adapters live on Hugging Face; data stays out of git.
-- Every evaluation number added to `results/` must name the model, adapter, calibration, interface (direct scoring vs generation),
-  rotation count and hardware it was measured on.
-- Licence contributions under Apache-2.0 (see `LICENSE`).
+Thanks for helping improve imajev. This repository is a community performance fork of [mohit67890/imajev](https://github.com/mohit67890/imajev). Upstream authorship, licence and citation are preserved.
+
+## Development
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+pip install -e ".[dev,serve]"
+pytest -q tests/test_contracts.py tests/test_temperature_calibration.py tests/test_playground_server.py
+```
+
+Open an issue before changes to public contracts, model semantics, benchmark methodology, defaults, dependencies or repository structure.
+
+Performance PRs must include commit SHA, hardware, runtime versions, model/adapter, precision, rotations, microbatch, scheduler knobs, p50/p95, peak memory, winner parity and the exact command used.
+
+Do not commit weights, datasets, private photos, prediction dumps, credentials or customer data. Public evaluation numbers must name model, adapter, calibration, interface, rotations, hardware and date.
+
+Prefer upstream-compatible changes and isolate fork-specific serving logic. Intentional divergence belongs in [FORK.md](FORK.md) with regression coverage.
+
+Contributions are accepted under Apache-2.0.
