@@ -152,4 +152,6 @@ Sweep: bucket=8 gewinnt (-11.5%, 4.85s->4.30s, keine Flips, pad 17%->2.7%).
 Alle qbatch>0 flippen (34/35, neuer Flip vs Baseline) -> disqualifiziert, B35
 faellt unter Promotion-Regel raus. Showdown (5 runs): serial 17.8s / batch
 14.6s / warm-gate 4.46s = 3.28x vs batch, 3.99x vs serial. Paritaet 34/35
-(Q17-Coin-Flip). Batch flippt zusaetzlich Q5/Q24/Q26 (32/35).
+(Q17-Coin-Flip). Batch 32/35 (Q5/Q24/Q26) — Q5-serial selbst __unknown__@0.014
+(kein Entscheid), Batch dort Elfyn Evans@0.476: Flip gegen Serial-Nichtantwort,
+nicht gegen Serial-Wissen.
