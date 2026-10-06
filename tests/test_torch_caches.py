@@ -339,3 +339,33 @@ def test_repeat_cache_expands_qwen_hybrid_linear_states():
     # Branching must never mutate the shared prefix cache.
     assert original.layers[0].keys.shape[0] == 1
     assert original.layers[0].conv_states[0].shape[0] == 1
+
+
+def test_prefix_alignment_tracks_qwen_gdn_chunks():
+    from types import SimpleNamespace
+
+    from torch_prefix_cache import _aligned_shared_length, _prefix_alignment
+
+    class Engine:
+        def __init__(self, layer_types):
+            text = SimpleNamespace(layer_types=layer_types)
+            self.base = SimpleNamespace(
+                config=SimpleNamespace(text_config=text),
+                model=SimpleNamespace(config=text),
+            )
+
+        def _base(self):
+            return self.base
+
+    qwen = Engine(["linear_attention", "linear_attention", "full_attention"])
+    assert _prefix_alignment(qwen) == 64
+    assert _aligned_shared_length(53, 64) == 0
+    assert _aligned_shared_length(64, 64) == 64
+    assert _aligned_shared_length(127, 64) == 64
+    assert _aligned_shared_length(130, 64) == 128
+    # Per-question splits are aligned by their absolute position.
+    assert _aligned_shared_length(70, 64, base=64) == 64
+
+    full = Engine(["full_attention", "full_attention"])
+    assert _prefix_alignment(full) == 1
+    assert _aligned_shared_length(53, 1) == 53

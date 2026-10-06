@@ -59,12 +59,45 @@ def _longest_common_prefix(rows):
     return min(shared, limit - 1)
 
 
+GDN_PREFIX_ALIGNMENT = 64
+
+
+def _prefix_alignment(engine):
+    """Numerically stable cache split alignment for the loaded decoder.
+
+    Transformers 5.18 Qwen3.5 evaluates Gated DeltaNet in 64-token chunks.
+    Splitting a cached continuation inside one of those chunks changes the
+    chunk decomposition versus a one-shot forward and can amplify bf16 drift.
+    Full-attention-only decoders do not need this restriction.
+    """
+    base = engine._base()
+    root = getattr(base, "config", None)
+    configs = (
+        root,
+        getattr(root, "text_config", None),
+        getattr(getattr(base, "model", None), "config", None),
+    )
+    for config in configs:
+        layer_types = getattr(config, "layer_types", None) if config is not None else None
+        if layer_types and any(kind == "linear_attention" for kind in layer_types):
+            return GDN_PREFIX_ALIGNMENT
+    return 1
+
+
+def _aligned_shared_length(common, alignment, *, base=0):
+    """Largest reusable part whose absolute end stays on a cache-safe boundary."""
+    if common <= 0 or alignment <= 1:
+        return max(0, common)
+    end = base + common
+    return max(0, (end // alignment) * alignment - base)
+
+
 def _repeat_cache(cache, batch_size):
     """Clone one-prefix cache and expand all cached states to batch_size.
 
-    Qwen3.5 hybrid layers inherit a batch repeater that expands dynamic
-    attention K/V but leaves linear-attention conv/recurrent states at batch 1.
-    Iterate layers ourselves so a successful K/V repeat cannot hide them.
+    Cache implementations differ: dynamic-attention layers can expose a batch
+    repeater while linear-attention states need explicit expansion. Iterate
+    layers ourselves so a successful K/V repeat cannot hide recurrent state.
     """
     branch = copy.deepcopy(cache)
     layers = getattr(branch, "layers", None)
@@ -202,17 +235,22 @@ def score_rendered_prefix_cached(
         prepared.append((inputs, token_ids))
         rows.append(_unpadded_ids(inputs))
 
-    shared = _longest_common_prefix(rows)
+    raw_shared = _longest_common_prefix(rows)
+    alignment = _prefix_alignment(engine)
+    shared = _aligned_shared_length(raw_shared, alignment)
     if shared < 1:
-        raise PrefixUnsuitable("prompts have no reusable token prefix")
+        raise PrefixUnsuitable(
+            f"reusable prefix ({raw_shared} tokens) does not reach a "
+            f"{alignment}-token cache-safe boundary"
+        )
 
     visual_ids = _visual_token_ids(engine)
     if visual_ids:
         for row in rows:
             suffix = row[shared:]
             if any(bool(suffix.eq(token).any()) for token in visual_ids):
-                raise ValueError(
-                    "visual placeholders escaped the common prefix"
+                raise PrefixUnsuitable(
+                    "cache-safe split would leave visual placeholders in the suffix"
                 )
 
     device = engine.device
@@ -329,6 +367,8 @@ def score_rendered_prefix_cached(
 
     return results, {
         "shared_prefix_tokens": shared,
+        "raw_shared_prefix_tokens": raw_shared,
+        "prefix_alignment": alignment,
         "suffix_tokens": lengths,
         "vision_forwards": 1 if first_inputs.get("pixel_values") is not None else 0,
         "prefix_prefills": 1,
@@ -401,16 +441,23 @@ def score_rendered_prefix_cached_hierarchical(
     if len(rows) < 2:
         raise ValueError("hierarchical prefix reuse requires at least two prompts")
 
-    shared = _longest_common_prefix(rows)
+    raw_shared = _longest_common_prefix(rows)
+    alignment = _prefix_alignment(engine)
+    shared = _aligned_shared_length(raw_shared, alignment)
     if shared < 1:
-        raise PrefixUnsuitable("prompts have no reusable global token prefix")
+        raise PrefixUnsuitable(
+            f"reusable global prefix ({raw_shared} tokens) does not reach a "
+            f"{alignment}-token cache-safe boundary"
+        )
 
     visual_ids = _visual_token_ids(engine)
     if visual_ids:
         for row in rows:
             suffix = row[shared:]
             if any(bool(suffix.eq(token).any()) for token in visual_ids):
-                raise ValueError("visual placeholders escaped the global prefix")
+                raise PrefixUnsuitable(
+                    "cache-safe global split would leave visual placeholders in the suffix"
+                )
 
     device = engine.device
     first_inputs = {
@@ -447,6 +494,7 @@ def score_rendered_prefix_cached_hierarchical(
 
     logits_out = []
     question_prefix_tokens = []
+    raw_question_prefix_tokens = []
     suffix_batches = 0
     max_effective_tokens = shared
     question_prefills = 0
@@ -454,7 +502,11 @@ def score_rendered_prefix_cached_hierarchical(
     for prepared in prepared_groups:
         group_rows = [item[2] for item in prepared]
         relative = [row[shared:] for row in group_rows]
-        question_shared = _longest_common_prefix(relative)
+        raw_question_shared = _longest_common_prefix(relative)
+        question_shared = _aligned_shared_length(
+            raw_question_shared, alignment, base=shared
+        )
+        raw_question_prefix_tokens.append(raw_question_shared)
         question_prefix_tokens.append(question_shared)
 
         branch_cache = global_cache
@@ -584,7 +636,10 @@ def score_rendered_prefix_cached_hierarchical(
 
     return logits_out, {
         "shared_prefix_tokens": shared,
+        "raw_shared_prefix_tokens": raw_shared,
+        "prefix_alignment": alignment,
         "question_shared_prefix_tokens": question_prefix_tokens,
+        "raw_question_shared_prefix_tokens": raw_question_prefix_tokens,
         "vision_forwards": (
             1 if first_inputs.get("pixel_values") is not None else 0
         ),

@@ -38,3 +38,19 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
 - Gate disablt korrekt; Prefix-Speedup unquotable (aktuell 0×).
 - Result-Cache (identischer Request): cold 1345ms → warm 0.7ms (~1900×).
 - Keine Toleranz-Diskussion vor Fix 1+3.
+
+## Neue Priorisierung nach Codevergleich (2026-10-06)
+
+1. **GDN-Split an 64er Chunkgrenze** — jetzt im Code umgesetzt, GPU-Parity
+   noch messen. HF Transformers 5.18.0 nutzt für Qwen3.5 `chunk_size=64`;
+   r1/r5 trennten bei 53/44 mitten im Chunk. StartLux-Decision richtet seinen
+   Torch shared-prefix ebenfalls auf 1024 (= 16 x 64) aus.
+2. **Cache branch state / B>1** — weiter prüfen; Branches müssen frische
+   Cache-Kopien bekommen und alle Linear-Attention-Zustände pro Row tragen.
+3. **bf16/kernel residue** — erst nach aligned split neu messen.
+4. **Prefill-Maske / Referenz-Padding** — herabgestuft: MLX prefillt ebenfalls
+   unmasked; der Live-Gate-Referenzpfad ist pro Prompt ungepaddet.
+
+Erwarteter nächster GPU-Test: exakt denselben Live-Gate-Probe mit
+`shared_prefix_tokens % 64 == 0` ausgeben und Candidate-vs-Reference delta +
+argmax messen. Keine Toleranz lockern.
