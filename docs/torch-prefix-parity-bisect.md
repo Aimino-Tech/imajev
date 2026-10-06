@@ -60,12 +60,22 @@ Setup: Qwen3.5-4B base, bf16, CUDA 16G, transformers 5.18.0, text-only,
 Erwarteter nächster GPU-Test: exakt denselben Live-Gate-Probe mit
 `shared_prefix_tokens % 64 == 0` ausgeben und Candidate-vs-Reference delta +
 argmax messen. Keine Toleranz lockern.
-## Befund 11:35 — Referenz selbst batch-sensitiv (wichtiger als alles oben)
+## Befund 11:35 — numerischer Parity-Floor B1 vs B=N (korrigiert, ex-Super-KI)
 
-Seriell B=1 vs B=2, identische Prompts: delta 0.177/0.071 — GRÖSSER als das
-Prefix-Residuum (0.067). GDN-aligned shared=128: delta 0.121, argmax stabil.
-Fazit: Prefix-vs-Batch vergleicht gegen eine wackelnde Referenz. Parity-Toleranz
-0.02 ist gegen diese Baseline unerreichbar — egal ob Prefix oder seriell.
-Nächste Frage: deterministische Referenz (gleiche Batchform beidseitig) statt
-kleinere Deltas jagen.
+Seriell B=1 vs B=2, identische Prompts: delta 0.177/0.071. Das ist KEINE
+Instabilität/Non-Determinismus (ungeprüft), sondern batch-shape-/kernel-
+Sensitivität: f(x,B=1) != exakt f(x,B=2) bei bf16+GDN. Korrekt formuliert:
+canonical-B1 und batched full-forward haben einen numerischen Parity-Floor
+von 0.07–0.18. GDN-aligned shared=128: delta 0.121, argmax stabil.
+Fazit: Gate verglich R1 (B=1 seriell) mit P (Prefix, suffix-Batch B=N) und
+mass damit cache-split + B=1→B=N + Kernel-Geometrie + bf16 aufsummiert.
+Fehlende Messung: R2 (full-forward B=N via collate) als Baseline, dann
+prefix_error = Δ(R2,P) statt total_error = Δ(R1,P).
+Messung 11:50 (shared=128, aligned): rep-B1=0, rep-B2=0 → deterministisch,
+"instabil" endgültig falsch. Aber: batch_noise 0.111/0.141, prefix_error
+Δ(R2,P) 0.083/0.121, total Δ(R1,P) 0.035/0.021. Super-KIs guter Fall
+(prefix_error ~0.008) trifft NICHT zu — Prefix hat echten Fehler ~0.1
+gegenüber gleichem Execution-Mode. argmax überall stabil. Fazit: kein
+Messartefakt mehr übrig; Restfehler sitzt im Prefix-Pfad selbst (split bei
+128 trotz Alignment? Suffix-Branch-State? GDN-Recurrence über Split?).
  ## Regeln bis Parity grün
