@@ -2,35 +2,96 @@
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/logo-dark.svg"><img alt="imajev" src="docs/assets/brand/logo-light.svg" width="260"></picture>
 </p>
 
-<h3 align="center">Decisions for real-world cases.</h3>
+<h3 align="center">Fast local decisions over shared evidence.</h3>
 
-<p align="center">Small open models (2B · 4B · 9B) that read the photos, records and text a business already has and answer in the options you set,<br>
-with a probability on each and an explicit <i>can't tell</i>. Your system acts when it is sure and hands the rest to a person.</p>
+<p align="center">
+Ask dozens of typed questions over the same image, record or UI state <b>without paying the vision + prompt cost dozens of times</b>.<br>
+This community performance fork keeps imajev open and local, then adds shared multimodal prefix/KV reuse, cross-question batching,
+length-aware suffix packing and exact result caching.
+</p>
+
+<p align="center">
+  <img alt="35 questions x 4 rotations: 4.39s p50" src="https://img.shields.io/badge/35Q%20%C3%97%204-4.39s%20p50-111111?style=for-the-badge">
+  <img alt="3.21x faster than production batch" src="https://img.shields.io/badge/vs%20batch-3.21%C3%97%20faster-333333?style=for-the-badge">
+  <img alt="3.88x faster than serial" src="https://img.shields.io/badge/vs%20serial-3.88%C3%97%20faster-555555?style=for-the-badge">
+</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/licence-Apache--2.0-111111?style=flat-square"></a>
-  <a href="https://huggingface.co/mohit67890/imajev-4b"><img alt="weights" src="https://img.shields.io/badge/weights-2B%20·%204B%20·%209B-555555?style=flat-square"></a>
-  <a href="https://huggingface.co/datasets/mohit67890/imajev-bench"><img alt="ImajevBench" src="https://img.shields.io/badge/benchmark-ImajevBench-555555?style=flat-square"></a>
+  <a href="https://huggingface.co/mohit67890/imajev-4b"><img alt="weights" src="https://img.shields.io/badge/weights-2B%20%C2%B7%204B%20%C2%B7%209B-555555?style=flat-square"></a>
+  <a href="https://github.com/Aimino-Tech/imajev/actions/workflows/ci.yml"><img alt="community CI" src="https://img.shields.io/github/actions/workflow/status/Aimino-Tech/imajev/ci.yml?branch=main&style=flat-square&label=community%20CI"></a>
 </p>
+
+<p align="center">
+  <a href="#why-this-fork"><b>Why this fork</b></a> ·
+  <a href="#quickstart"><b>Quickstart</b></a> ·
+  <a href="FORK.md"><b>Performance details</b></a> ·
+  <a href="COMMUNITY.md"><b>Community</b></a> ·
+  <a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Upstream demo</b></a>
+</p>
+
+## Why this fork
+
+The original imajev model is already strong: small open vision-language decision models with typed outputs, calibrated probabilities
+and a trained `unknown`. This fork focuses on the serving problem that appears as soon as you use it seriously:
+
+> **One screenshot or record. Many questions. Multiple option-order rotations. Do not recompute the same evidence every time.**
+
+| Benefit | What changes in this fork |
+|---|---|
+| **3.21× faster than production batching** | Latest 35-question × 4-rotation visual run: **4.39 s p50** warm shared-prefix vs **14.1 s** batch. |
+| **3.88× faster than canonical serial** | The same workload was **17.0 s** serial. Shared evidence is no longer recomputed per question. |
+| **Vision work once per shared request** | Image preprocessing and the visual/model prefix are created once, then reused across questions and rotations. |
+| **Less padding and launch waste** | Questions are cross-batched and suffixes are length-bucketed; the current production default is an 8-token bucket. |
+| **Exact repeats are cached** | A bounded result cache avoids model work when the same evidence/question context is requested again. |
+| **Safe production defaults** | Wider question-prefix batching stays experimental because it caused new winner flips; production keeps `qbatch=0`. |
+| **Still open and local** | Same Apache-2.0 project lineage, same model weights and typed API; no hosted dependency and no kernel hack required. |
+
+### Architecture at a glance
+
+```text
+image + state
+     │
+     ├─► visual preprocessing                         once
+     │
+     └─► shared multimodal / KV prefix               once
+              │
+              ├─► batched question prefixes          across questions
+              │       │
+              │       └─► length-bucketed suffixes   across rotations/questions
+              │
+              └─► typed probabilities + unknown
+```
+
+The production scheduler is intentionally conservative:
+
+```text
+microbatch=16
+suffix bucket=8
+question-prefill batch=0
+shared prefix=on
+```
+
+On the documented A4000-class 16 GiB CUDA test environment, repeated runs landed at **4.39–4.46 s p50** for the warm prefix path.
+Winner parity against canonical serial was **34/35**; the one disagreement is an already documented ultra-low-margin near-tie.
+The ordinary batched path produced additional winner flips on the same panel. Full methodology, rejected experiments and exact
+commands are in [FORK.md](FORK.md), [the scheduler benchmark guide](docs/prefix-scheduler-benchmarks.md) and
+[the parity investigation](docs/torch-prefix-parity-bisect.md).
+
+### Where this matters
+
+This fork is most useful when a single piece of evidence drives many structured decisions: UI/UX review, screenshot checks,
+manufacturing inspection, support triage, policy evaluation, record-vs-image validation, agent verification and any pipeline that
+asks many typed questions over the same context.
+
+### Built on upstream imajev
+
+The model family, weights, benchmark lineage, model cards and canonical citation remain upstream at
+[mohit67890/imajev](https://github.com/mohit67890/imajev). This fork adds serving, caching, scheduling, benchmarking and
+community tooling; provenance is documented in [FORK.md](FORK.md) and [NOTICE](NOTICE).
 
 <p align="center"><a href="#independent-results"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/social/ranks-dark.png"><img alt="#1 of 91 on JevBench v1.4.2.2 (text, scored 27 Sep 2026), ahead of Jev 1.13.0. #1 of 49 on Image JevBench v0.1.3 (images, released 28 Sep 2026), ahead of Jev-Omni. #3 of 56 on DecisionBench (eng, v1), 28 Sep 2026, ahead of GPT-5.6 Luna." src="docs/assets/social/ranks-light.png" width="820"></picture></a></p>
 
-<p align="center">
-  <a href="https://benchmarkheaven.com/jev-models"><img alt="JevBench v1.4.2.2: #1 of 91" src="https://img.shields.io/badge/JevBench%20v1.4.2.2-%231%20of%2091-111111?style=for-the-badge"></a>
-  <a href="https://benchmarkheaven.com/image-jev-bench"><img alt="Image JevBench v0.1.3: #1 of 49" src="https://img.shields.io/badge/Image%20JevBench%20v0.1.3-%231%20of%2049-111111?style=for-the-badge"></a>
-  <a href="https://huggingface.co/spaces/Hanno-Labs/decision-bench-leaderboard"><img alt="DecisionBench: #3 of 56 models" src="https://img.shields.io/badge/DecisionBench-%233%20of%2056%20models-111111?style=for-the-badge"></a>
-</p>
-
-<p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><img alt="Try the live demo on Hugging Face Spaces" src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg.svg"></a></p>
-
-<p align="center"><a href="https://huggingface.co/spaces/mohit67890/imajev"><b>Live demo</b></a> · <a href="https://mohit67890.github.io/imajev/"><b>Website</b></a> · <a href="#quickstart">Quickstart</a> · <a href="#checked-not-cherry-picked">Checked examples</a> · <a href="#results">Results</a> · <a href="https://mohit67890.github.io/imajev/report/">Technical report</a></p>
-
-> [!NOTE]
-> **Community performance fork.** This repository preserves the upstream
-> [mohit67890/imajev](https://github.com/mohit67890/imajev) model, benchmark lineage,
-> licence and citation, and adds a production-oriented Torch/Hugging Face serving path
-> for high-throughput multi-question workloads. See [FORK.md](FORK.md),
-> [COMMUNITY.md](COMMUNITY.md), and [docs/prefix-scheduler-benchmarks.md](docs/prefix-scheduler-benchmarks.md).
 
 
 ## Independent results
@@ -268,6 +329,9 @@ JevBench hard. The 2B is 11 points lower on ImajevBench and 10 lower on JevBench
 The Mac (MLX) weights agree with the GPU run on 97 to 99% of ImajevBench answers (2B 97.1%, 4B 98.2%, 9B 99.3%).
 
 ## Quickstart
+
+For the optimized CUDA serving path in this fork, `shared-prefix` is on by default. The promoted scheduler defaults are
+`suffix bucket=8` and `question-prefill batch=0`; add `--fast` on CUDA for the fast Torch serving path.
 
 ```sh
 git clone https://github.com/Aimino-Tech/imajev && cd imajev
